@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-86 -67 1190 938" fill="none">
+  <defs>
+    <pattern id="ink-dots" width="11" height="11" patternUnits="userSpaceOnUse">
+      <circle cx="3.8" cy="3.8" r="2.25" fill="#1b1820"/>
+    </pattern>
+    <path id="west" d="M402 122H142V35L-64 251L142 457V365H402Z"/>
+    <path id="north" d="M476 644V239H332L572 -19L820 239H678V644Z"/>
+    <path id="south" d="M164 79H294V553H424L229 803L35 553H164Z"/>
+    <path id="east" d="M117 381H655V246L1019 471L655 695V560H117Z"/>
+    <mask id="slit" maskUnits="userSpaceOnUse" x="40" y="175" width="1040" height="610">
+      <rect x="40" y="175" width="1040" height="610" fill="white"/>
+      <path d="M109 444H587V460H109Z" fill="black"/>
+    </mask>
+  </defs>
+  <g stroke-linejoin="miter">
+    <g transform="translate(1 21) rotate(-2 180 248)">
+      <use href="#west" transform="translate(8 9)" stroke="#6a5093" stroke-width="2.5"/>
+      <use href="#west" stroke="#18161d" stroke-width="6" fill="#eeeae5" fill-opacity=".56"/>
+    </g>
+    <g transform="translate(112 -5) rotate(-9 570 328)">
+      <use href="#north" transform="translate(22 20)" fill="url(#ink-dots)" stroke="#1b1820" stroke-width="3"/>
+      <use href="#north" fill="#b99cf6" stroke="#18161d" stroke-width="6.5"/>
+      <path d="M525 197l49-55 54 53" stroke="#e7dafa" stroke-width="7.5" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(50 20) rotate(8 227 444)">
+      <use href="#south" transform="translate(11 14)" fill="#18161d"/>
+      <use href="#south" fill="#daf348" stroke="#18161d" stroke-width="6.5"/>
+    </g>
+    <g transform="translate(52 14) rotate(-7 538 472)">
+      <use href="#east" transform="translate(16 26)" fill="url(#ink-dots)" stroke="#18161d" stroke-width="3"/>
+      <use href="#east" transform="translate(0 -19)" stroke="#18161d" stroke-width="3"/>
+      <use href="#east" fill="#18161d" mask="url(#slit)"/>
+    </g>
+    <g transform="translate(906 119) rotate(-9)">
+      <path d="M0 0l31-26m-13 47 46-21" stroke="#18161d" stroke-width="7" stroke-linecap="square"/>
+    </g>
+  </g>
+</svg>
