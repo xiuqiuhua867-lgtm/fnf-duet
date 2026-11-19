@@ -2,13 +2,15 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#b99cf6">
   <meta name="description" content="情绪与星界的四键对唱。打开浏览器，选择练习或正式演奏。">
   <title>Friday Night Funkin’ · 同人</title>
   <link rel="icon" type="image/png" href="assets/ui/blue0000.png">
   <link rel="preload" as="image" href="assets/menu/purple-arrows.svg">
-  <link rel="stylesheet" href="style.css?v=scroll3">
+  <link rel="stylesheet" href="style.css?v=perf5">
 </head>
 <body data-phase="menu" data-edition="purple-duet">
 <div class="viewport" id="viewport">
@@ -52,6 +54,7 @@
             <div class="settings-tabs" role="tablist" aria-label="设置类别">
               <button id="tab-sound" role="tab" aria-selected="true" aria-controls="panel-sound">声音</button>
               <button id="tab-control" role="tab" aria-selected="false" aria-controls="panel-control" tabindex="-1">操作</button>
+              <button id="tab-display" role="tab" aria-selected="false" aria-controls="panel-display" tabindex="-1">画面</button>
             </div>
           </div>
           <div class="settings-content">
@@ -63,12 +66,18 @@
               <label class="setting-line"><span>正确命中音</span><input class="toggle" id="hit-sound" type="checkbox"></label>
             </div>
             <div id="panel-control" role="tabpanel" aria-labelledby="tab-control" hidden>
-              <label class="setting-line"><span>音符方向</span><output id="scroll-direction" for="downscroll">上升式</output><input id="downscroll" type="checkbox" role="switch" aria-label="下落式音符" aria-describedby="scroll-note"></label>
+              <label class="setting-line"><span>音符方向</span><output id="scroll-direction" for="downscroll">上升式</output><input class="setting-switch" id="downscroll" type="checkbox" role="switch" aria-label="下落式音符" aria-describedby="scroll-note"></label>
               <p id="scroll-note" class="setting-note">下落式将判定线放在下方，对战条移到上方。</p>
               <label class="setting-line"><span>音画偏移</span><input id="offset" type="range" min="-200" max="200" step="5" value="0"><output id="offset-value">0 毫秒</output></label>
               <p class="setting-note">正值让判定稍晚，负值让判定稍早。</p>
               <div class="setting-line bindings"><span>键盘映射</span><div id="key-bindings"><button data-bind="0" aria-label="更改左键">A</button><button data-bind="1" aria-label="更改下键">S</button><button data-bind="2" aria-label="更改上键">W</button><button data-bind="3" aria-label="更改右键">D</button></div></div>
               <p id="key-status" class="setting-note" role="status"></p>
+            </div>
+            <div id="panel-display" role="tabpanel" aria-labelledby="tab-display" hidden>
+              <label class="setting-line"><span>画质</span><select id="quality" aria-describedby="quality-note"><option value="auto">自动</option><option value="1080">高清 1080p</option><option value="720">流畅 720p</option><option value="540">省电 540p</option></select></label>
+              <p id="quality-note" class="setting-note">自动画质适应手机屏幕；持续掉帧时会比较较低分辨率的表现。</p>
+              <label class="setting-line"><span>性能监测</span><input class="setting-switch" id="performance-monitor" type="checkbox" role="switch" aria-describedby="performance-note"></label>
+              <p id="performance-note" class="setting-note">FPS 为页面绘制帧率，CPU 为游戏循环耗时占比。网页无法读取整机 CPU/GPU 占用率。测量仅在本机显示。</p>
             </div>
             <div class="settings-bottom"><button id="settings-reset" class="text-button">恢复默认</button><button id="settings-done" class="ink-button">完成 <span aria-hidden="true">✓</span></button></div>
           </div>
@@ -97,7 +106,11 @@
       <button data-lane="0" aria-label="左" disabled><span>←</span></button><button data-lane="1" aria-label="下" disabled><span>↓</span></button><button data-lane="2" aria-label="上" disabled><span>↑</span></button><button data-lane="3" aria-label="右" disabled><span>→</span></button>
     </div>
   </main>
+  <aside id="performance-panel" aria-label="性能监测" hidden>
+    <strong><span id="perf-fps">—</span><small> FPS</small></strong>
+    <div id="perf-details">正在测量…</div>
+  </aside>
 </div>
 <audio id="music" preload="none" data-src="assets/music.m4a" playsinline></audio>
-<script src="screen.js?v=purple2"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=edges4"></script><script src="judge.js?v=purple2"></script><script src="scene.js?v=purple2"></script><script src="data.js?v=purple2"></script><script src="sounds.js?v=purple2"></script><script src="game.js?v=scroll3"></script>
+<script src="screen.js?v=purple2"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=perf5"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=purple2"></script><script src="data.js?v=purple2"></script><script src="sounds.js?v=purple2"></script><script src="performance.js?v=perf5"></script><script src="game.js?v=perf5"></script>
 </body></html>

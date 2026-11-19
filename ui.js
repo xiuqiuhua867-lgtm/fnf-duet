@@ -31,9 +31,16 @@
     autoVisualHealthGain: 1.4209100371420946
   };
   let settings = { ...defaults }, chart = {}, ready = false;
+  let indexedEvents = null, maxHold = 0, maxSplashFrames = 0;
 
   function configure(options = {}) {
-    if (options.chart) chart = options.chart;
+    if (options.chart) {
+      chart = options.chart;
+      const events = chart.events;
+      indexedEvents = Array.isArray(events) && events.every((note, i) =>
+        Number.isFinite(note.hit) && Number.isFinite(note.hold) && (!i || note.hit >= events[i - 1].hit)) ? events : null;
+      maxHold = indexedEvents ? indexedEvents.reduce((max, note) => Math.max(max, note.hold), 0) : 0;
+    }
     if (options.config) settings = { ...defaults, ...settings, ...options.config };
     return api;
   }
@@ -52,6 +59,7 @@
     }
     extraManifest = root.FNF_EXTRA_ASSETS;
     if (!extraManifest) throw new Error('Additional UI manifest is missing');
+    maxSplashFrames = Object.values(extraManifest.splash_groups || {}).reduce((max, frames) => Math.max(max, frames.length), 0);
     await WebArt.load('hud');
     for(const key of keys)images[key]=WebArt.surface('ui/'+key);
     const files=new Set(Object.values(extraManifest.images));
@@ -211,11 +219,32 @@
     return display;
   }
 
-  function draw(ctx, time, chartEvents, state = {}, width = ctx.canvas.width, height = ctx.canvas.height) {
+  // The game's sorted chart is immutable during playback. Only traverse
+  // notes near the viewport, including sustained notes and late effects.
+  // Explicit/synthetic render callers can continue supplying arbitrary arrays.
+  function windowEvents(events, t, speed, scale) {
+    if (events !== indexedEvents || !(speed > 0)) return events;
+    const margin = heads.reduce((m, key) => Math.max(m, (images[key]?.height || 168) * scale / 2), 150);
+    const screenSpan = (stageHeight + margin) / speed;
+    const history = maxHold + Math.max(screenSpan, .4 + maxSplashFrames / settings.splashFps);
+    function bound(value, afterEqual) {
+      let lo = 0, hi = events.length;
+      while (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (events[mid].hit < value || (afterEqual && events[mid].hit === value)) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    }
+    return events.slice(bound(t - history, false), bound(t + screenSpan, true));
+  }
+
+  function draw(ctx, time, chartEvents, state = {}, width = ctx.canvas.width, height = ctx.canvas.height, useWindow = false) {
     const t = Math.max(0, finite(time, 0));
-    const events = Array.isArray(chartEvents) ? chartEvents : (chartEvents && chartEvents.events) || chart.events || [];
+    let events = Array.isArray(chartEvents) ? chartEvents : (chartEvents && chartEvents.events) || chart.events || [];
     if (!Array.isArray(chartEvents) && chartEvents && chartEvents.events) chart = chartEvents;
     const c = settings, speed = finite(state.scrollSpeed, c.scrollSpeed), scale = c.spriteScale;
+    if (useWindow) events = windowEvents(events, t, speed, scale);
     const autoSides = state.autoSides || [state.auto === true, state.auto === true];
     const lanes = [[], []];
     for (let side = 0; side < 2; side++) for (let lane = 0; lane < 4; lane++) {

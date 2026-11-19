@@ -73,6 +73,7 @@
       this._heads = [0, 0]; this._attempts = [0, 0]; this._accSum = [0, 0];
       this._pop = [null, null]; this._recentHeads = [null, null];
       this._feedbackSerial = 0; this._feedbackEvents = [];
+      this._noteStates = new Map();
       this._lastMiss = [null, null]; this._lastMissAt = [-1000, -1000];
       this._keys = [false, false, false, false];
       this._lanes = [0, 1].map(() => [0, 1, 2, 3].map(() => ({ pressed: false, held: false, confirmAt: -1000 })));
@@ -135,6 +136,7 @@
         releaseAt: null, hitAt: judgement === 'miss' ? null : t,
         completedAt: null, judgedAt: t, comboAtHit: 0
       };
+      this._noteStates.set(n.id, n.state);
       return n.state;
     }
 
@@ -291,13 +293,19 @@
       return held ? DIRECTIONS[held.lane] : 'idle';
     }
 
-    sample(t = this.time) {
+    // Public snapshots are independent copies, as before. The animation
+    // loop can consume a synchronous read-only view of the same judge state.
+    sample(t = this.time) { return this._sample(t, false); }
+
+    sampleFrame(t = this.time) { return this._sample(t, true); }
+
+    _sample(t, liveFrame) {
       this.update(t);
       const c = this.config, auto = !!this.options.autoplay;
       const health = clamp(this._healthVisual, auto ? c.healthMin : 0, auto ? c.healthMax : 1);
       const icon = share => share <= c.dangerThreshold ? 2 : share >= c.advantageThreshold ? 1 : 0;
-      const noteStates = new Map();
-      for (const n of this._notes) if (n.state) noteStates.set(n.id, { ...n.state });
+      const noteStates = liveFrame ? this._noteStates : new Map();
+      if (!liveFrame) for (const n of this._notes) if (n.state) noteStates.set(n.id, { ...n.state });
       return {
         time: this.time, status: this.status, failed: this.status === 'failed', finished: this.status === 'finished',
         failedAt: this.failedAt, finishedAt: this.finishedAt,
@@ -309,7 +317,7 @@
         iconStates: [icon(health), icon(1 - health)],
         laneStates: this._lanes.map(lanes => lanes.map(lane => ({ ...lane }))), noteStates,
         recentHeads: this._recentHeads.map(n => n ? { ...n } : null)
-        , feedbackEvents: this._feedbackEvents.map(e => ({ ...e })), feedbackSeq: this._feedbackSerial,
+        , feedbackEvents: liveFrame ? this._feedbackEvents : this._feedbackEvents.map(e => ({ ...e })), feedbackSeq: this._feedbackSerial,
         lastMissAt: this._lastMissAt.slice(), lastMiss: this._lastMiss.map(e => e ? { ...e } : null),
         ruleProfile: { ...this.rules }
       };
