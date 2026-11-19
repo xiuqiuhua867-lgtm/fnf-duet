@@ -190,7 +190,9 @@
     const origin = finite(state.beatOrigin, finite(chart.beatOrigin, 1.0625));
     const phase = (((t - origin) / (60 / bpm)) % 1 + 1) % 1;
     const bop = Math.exp(-phase * 11), size = c.iconSize * (1 + .065 * bop);
-    const iy = screenY(c.iconY - 5 * bop);
+    const iy = c.downscroll
+      ? Math.max(size / 2 + 28, barY + c.barH / 2 - 5 * bop)
+      : c.iconY - 5 * bop;
     const icons = display.iconStates;
     for (let side = 0; side < 2; side++) {
       const im = images[side ? 'icon-sekai' : 'icon-joucho'];
@@ -201,7 +203,7 @@
       const score = Math.floor(finite(state.scores && state.scores[side], 0));
       const accuracy = finite(state.accuracy && state.accuracy[side], 100);
       const number = (score < 0 ? '-' : '') + String(Math.abs(score)).padStart(6, '0');
-      if (c.showCounters && (side === 1 || state.auto || state.practice)) text(ctx, `SCORE ${number}   COMBO ${String(combo).padStart(3, '0')}   ACC ${accuracy.toFixed(2)}%`, x, screenY(1016), 'bold 18px Arial, sans-serif', '#c6d1df', align);
+      if (c.showCounters && (side === 1 || state.auto || state.practice)) text(ctx, `SCORE ${number}   COMBO ${String(combo).padStart(3, '0')}   ACC ${accuracy.toFixed(2)}%`, x, c.downscroll ? 22 : screenY(1016), 'bold 18px Arial, sans-serif', '#c6d1df', align);
       const p = state.pop && state.pop[side];
       if (!p) continue;
       const age = finite(p.age, t - finite(p.t, -1000));
