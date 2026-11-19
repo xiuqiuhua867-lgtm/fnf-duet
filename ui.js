@@ -20,7 +20,7 @@
   const finite = (n, fallback) => Number.isFinite(n) ? n : fallback;
   const defaults = {
     width: 1920, height: 1080, spriteScale: .75, scrollSpeed: 900,
-    noteClipBottom: 800, lateNoteSeconds: .24,
+    noteClipBottom: 800, lateNoteSeconds: .24, downscroll: false,
     barX: 390, barY: 958, barW: 1140, barH: 26,
     iconSize: 150, iconY: 935,
     colors: ['#69c9ef', '#b091df'], stroke: '#090c13',
@@ -71,7 +71,7 @@
   function text(ctx, value, x, y, font, color, align = 'left', outline = true) {
     ctx.font = font;
     ctx.textAlign = align;
-    ctx.textBaseline = 'top';
+    ctx.textBaseline = settings.downscroll ? 'bottom' : 'top';
     ctx.lineJoin = 'round';
     if (outline) { ctx.lineWidth = 5; ctx.strokeStyle = '#090b13'; ctx.strokeText(String(value), x, y); }
     ctx.fillStyle = color;
@@ -84,11 +84,19 @@
     ctx.drawImage(im, x - im.width * scale / 2, y - im.height * scale / 2, im.width * scale, im.height * scale);
   }
 
-  function lanePosition(side, lane) {
+  const stageHeight = 1080;
+  function screenY(y) { return settings.downscroll ? stageHeight - y : y; }
+
+  function upscrollPosition(side, lane) {
     const im = images[idle[lane]];
     const w = im ? im.width : (lane === 0 || lane === 3 ? 152 : 168);
     const h = im ? im.height : (lane === 0 || lane === 3 ? 168 : 152);
     return { x: (92 + side * 640 + lane * 112 + w * .25) * 1.5, y: (50 + h * .25) * 1.5 };
+  }
+  function lanePosition(side, lane) {
+    const pos = upscrollPosition(side, lane);
+    pos.y = screenY(pos.y);
+    return pos;
   }
 
   function getNoteState(state, note) {
@@ -159,21 +167,22 @@
     const c = settings, colors = c.colors, display = displayHealth(state);
     const health = display.health;
     const seam = c.barX + health * c.barW;
+    const barY = c.downscroll ? screenY(c.barY + c.barH) : c.barY;
     if (c.showFooterShade && state.showFooterShade !== false) {
-      const shade = ctx.createLinearGradient(0, 880, 0, 1080);
+      const shade = ctx.createLinearGradient(0, screenY(880), 0, screenY(stageHeight));
       shade.addColorStop(0, '#080b1200'); shade.addColorStop(.46, '#080b1270'); shade.addColorStop(1, '#080b12d9');
-      ctx.fillStyle = shade; ctx.fillRect(0, 880, 1920, 200);
+      ctx.fillStyle = shade; ctx.fillRect(0, c.downscroll ? 0 : 880, 1920, 200);
     }
-    ctx.fillStyle = c.stroke; ctx.fillRect(c.barX - 5, c.barY - 5, c.barW + 10, c.barH + 10);
-    ctx.fillStyle = colors[0]; ctx.fillRect(c.barX, c.barY, seam - c.barX, c.barH);
-    ctx.fillStyle = colors[1]; ctx.fillRect(seam, c.barY, c.barX + c.barW - seam, c.barH);
-    ctx.fillStyle = '#ffffff41'; ctx.fillRect(c.barX, c.barY, c.barW, 4);
-    ctx.fillStyle = '#121721'; ctx.fillRect(seam - 1.5, c.barY, 3, c.barH);
+    ctx.fillStyle = c.stroke; ctx.fillRect(c.barX - 5, barY - 5, c.barW + 10, c.barH + 10);
+    ctx.fillStyle = colors[0]; ctx.fillRect(c.barX, barY, seam - c.barX, c.barH);
+    ctx.fillStyle = colors[1]; ctx.fillRect(seam, barY, c.barX + c.barW - seam, c.barH);
+    ctx.fillStyle = '#ffffff41'; ctx.fillRect(c.barX, barY, c.barW, 4);
+    ctx.fillStyle = '#121721'; ctx.fillRect(seam - 1.5, barY, 3, c.barH);
     const bpm = finite(state.bpm, finite(chart.bpm, 128));
     const origin = finite(state.beatOrigin, finite(chart.beatOrigin, 1.0625));
     const phase = (((t - origin) / (60 / bpm)) % 1 + 1) % 1;
     const bop = Math.exp(-phase * 11), size = c.iconSize * (1 + .065 * bop);
-    const iy = c.iconY - 5 * bop;
+    const iy = screenY(c.iconY - 5 * bop);
     const icons = display.iconStates;
     for (let side = 0; side < 2; side++) {
       const im = images[side ? 'icon-sekai' : 'icon-joucho'];
@@ -184,7 +193,7 @@
       const score = Math.floor(finite(state.scores && state.scores[side], 0));
       const accuracy = finite(state.accuracy && state.accuracy[side], 100);
       const number = (score < 0 ? '-' : '') + String(Math.abs(score)).padStart(6, '0');
-      if (c.showCounters && (side === 1 || state.auto || state.practice)) text(ctx, `SCORE ${number}   COMBO ${String(combo).padStart(3, '0')}   ACC ${accuracy.toFixed(2)}%`, x, 1016, 'bold 18px Arial, sans-serif', '#c6d1df', align);
+      if (c.showCounters && (side === 1 || state.auto || state.practice)) text(ctx, `SCORE ${number}   COMBO ${String(combo).padStart(3, '0')}   ACC ${accuracy.toFixed(2)}%`, x, screenY(1016), 'bold 18px Arial, sans-serif', '#c6d1df', align);
       const p = state.pop && state.pop[side];
       if (!p) continue;
       const age = finite(p.age, t - finite(p.t, -1000));
@@ -194,8 +203,9 @@
       ctx.save();
       ctx.globalAlpha = clamp((.34 - age) / .10, 0, 1);
       const px = side ? 1440 : 480, rise = age * 26;
-      extraSprite(ctx, kind, px, 815 - rise, .36 * (1 + .10 * Math.exp(-age * 22)));
-      comboSprites(ctx, combo, px, 860 - rise);
+      const labelY = c.downscroll ? screenY(860 - rise) : 815 - rise;
+      extraSprite(ctx, kind, px, labelY, .36 * (1 + .10 * Math.exp(-age * 22)));
+      comboSprites(ctx, combo, px, labelY + 45);
       ctx.restore();
     }
     return display;
@@ -227,16 +237,20 @@
     ctx.scale(width / 1920, height / 1080);
     ctx.imageSmoothingEnabled = true;
     ctx.save();
-    ctx.beginPath(); ctx.rect(0, 0, 1920, c.noteClipBottom); ctx.clip();
+    ctx.beginPath(); ctx.rect(0, c.downscroll ? stageHeight - c.noteClipBottom : 0, 1920, c.noteClipBottom); ctx.clip();
     for (let side = 0; side < 2; side++) for (let lane = 0; lane < 4; lane++) {
       const pos = lanePosition(side, lane);
       sprite(ctx, idle[lane], pos.x, pos.y);
     }
 
     let sustainDrawn = 0, notesDrawn = 0, splashesDrawn = 0, holdEndDrawn = 0, activeHoldGlows = 0;
+    // Sustain graphics carry a direction: flip both the strip and its rounded tip.
+    // Arrow glyphs, confirmation bursts and all HUD lettering stay upright.
+    ctx.save();
+    if (c.downscroll) { ctx.translate(0,stageHeight); ctx.scale(1,-1); }
     for (const n of events) {
       if (!(n.hold > 0) || !lanes[n.side] || !lanes[n.side][n.lane]) continue;
-      const pos = lanePosition(n.side, n.lane), headY = pos.y + (n.hit - t) * speed;
+      const pos = upscrollPosition(n.side, n.lane), headY = pos.y + (n.hit - t) * speed;
       const tailY = pos.y + (n.hit + n.hold - t) * speed;
       if (tailY < -50 || headY > c.noteClipBottom + 50) continue;
       const ns = getNoteState(state, n);
@@ -258,19 +272,20 @@
       ctx.drawImage(cap, pos.x - cap.width * scale / 2, capTop, cap.width * scale, cap.height * scale);
       ctx.restore(); sustainDrawn++;
     }
+    ctx.restore();
 
     for (const n of events) {
       if (!lanes[n.side] || !lanes[n.side][n.lane]) continue;
       const dt = n.hit - t;
       if (dt < -c.lateNoteSeconds) continue;
       const ns = getNoteState(state, n);
-      if (isSuccess(ns) || (autoSides[n.side] && dt < -.001)) continue;
-      const pos = lanePosition(n.side, n.lane), y = pos.y + dt * speed;
+      if (ns.judgement === 'miss' || isSuccess(ns) || (autoSides[n.side] && dt < -.001)) continue;
+      const pos = upscrollPosition(n.side, n.lane);
+      // Keep a late, still-playable head on its receptor until the judge resolves it.
+      const y = pos.y + Math.max(0, dt) * speed;
       if (y < -150 || y > c.noteClipBottom + 150) continue;
-      ctx.save();
-      if (ns.judgement === 'miss') ctx.globalAlpha = .50;
-      sprite(ctx, heads[n.lane], pos.x, y);
-      ctx.restore(); notesDrawn++;
+      sprite(ctx, heads[n.lane], pos.x, screenY(y));
+      notesDrawn++;
     }
 
     for (let side = 0; side < 2; side++) for (let lane = 0; lane < 4; lane++) {

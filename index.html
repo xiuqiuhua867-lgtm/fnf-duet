@@ -8,7 +8,7 @@
   <title>Friday Night Funkin’ · 同人</title>
   <link rel="icon" type="image/png" href="assets/ui/blue0000.png">
   <link rel="preload" as="image" href="assets/menu/purple-arrows.svg">
-  <link rel="stylesheet" href="style.css?v=purple2">
+  <link rel="stylesheet" href="style.css?v=scroll3">
 </head>
 <body data-phase="menu" data-edition="purple-duet">
 <div class="viewport" id="viewport">
@@ -63,6 +63,8 @@
               <label class="setting-line"><span>正确命中音</span><input class="toggle" id="hit-sound" type="checkbox"></label>
             </div>
             <div id="panel-control" role="tabpanel" aria-labelledby="tab-control" hidden>
+              <label class="setting-line"><span>音符方向</span><output id="scroll-direction" for="downscroll">上升式</output><input id="downscroll" type="checkbox" role="switch" aria-label="下落式音符" aria-describedby="scroll-note"></label>
+              <p id="scroll-note" class="setting-note">下落式将判定线放在下方，对战条移到上方。</p>
               <label class="setting-line"><span>音画偏移</span><input id="offset" type="range" min="-200" max="200" step="5" value="0"><output id="offset-value">0 毫秒</output></label>
               <p class="setting-note">正值让判定稍晚，负值让判定稍早。</p>
               <div class="setting-line bindings"><span>键盘映射</span><div id="key-bindings"><button data-bind="0" aria-label="更改左键">A</button><button data-bind="1" aria-label="更改下键">S</button><button data-bind="2" aria-label="更改上键">W</button><button data-bind="3" aria-label="更改右键">D</button></div></div>
@@ -97,5 +99,5 @@
   </main>
 </div>
 <audio id="music" preload="none" data-src="assets/music.m4a" playsinline></audio>
-<script src="screen.js?v=purple2"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=purple2"></script><script src="judge.js?v=purple2"></script><script src="scene.js?v=purple2"></script><script src="data.js?v=purple2"></script><script src="sounds.js?v=purple2"></script><script src="game.js?v=purple2"></script>
+<script src="screen.js?v=purple2"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=scroll3"></script><script src="judge.js?v=purple2"></script><script src="scene.js?v=purple2"></script><script src="data.js?v=purple2"></script><script src="sounds.js?v=purple2"></script><script src="game.js?v=scroll3"></script>
 </body></html>

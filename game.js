@@ -3,9 +3,10 @@
 const $=id=>document.getElementById(id),canvas=$('stage'),ctx=canvas.getContext('2d'),audio=$('music');
 const testMode=new URLSearchParams(location.search).get('test')==='1';
 const ARROWS={ArrowLeft:0,ArrowDown:1,ArrowUp:2,ArrowRight:3},physical=new Set();
-const DEFAULTS={music:.85,sfx:.45,hitSound:false,failureSound:'mode',offsetMs:0,keys:['KeyA','KeyS','KeyW','KeyD']};
+const DEFAULTS={music:.85,sfx:.45,hitSound:false,failureSound:'mode',offsetMs:0,downscroll:false,keys:['KeyA','KeyS','KeyW','KeyD']};
 const STORE='rhythm-court26';let saved={};try{saved=JSON.parse(localStorage.getItem(STORE)||'{}');}catch{}
 let settings={...DEFAULTS,...saved.settings},records=saved.records||{};
+settings.downscroll=settings.downscroll===true;
 settings.keys=Array.isArray(settings.keys)&&settings.keys.length===4&&new Set(settings.keys).size===4?settings.keys:[...DEFAULTS.keys];
 for(const name of ['music','sfx'])settings[name]=Math.max(0,Math.min(1,Number(settings[name])||0));
 settings.offsetMs=Math.max(-200,Math.min(200,Number(settings.offsetMs)||0));
@@ -48,8 +49,9 @@ function showMenuPage(view,withSound=true){
 }
 function updateBest(){const r=records.formal,el=$('best-score');el.hidden=!r;el.textContent=r?`正式最佳 ${r.score.toLocaleString('zh-CN')} · 准确率 ${r.accuracy.toFixed(2)}%`:'';}
 function failureAudioEnabled(){return settings.failureSound==='on'||(settings.failureSound==='mode'&&!practice);}
-function applySettings(){audio.volume=settings.music;CourtSounds.setVolume(settings.sfx);if(!failureAudioEnabled())for(const channel of ['failure-miss','death','gameover','retry'])CourtSounds.stop(channel);persist();}
+function applySettings(){audio.volume=settings.music;CourtSounds.setVolume(settings.sfx);FnfUI.configure({config:{downscroll:settings.downscroll}});if(!failureAudioEnabled())for(const channel of ['failure-miss','death','gameover','retry'])CourtSounds.stop(channel);persist();}
 function settingsForm(){
+ $('downscroll').checked=settings.downscroll;$('scroll-direction').textContent=settings.downscroll?'下落式':'上升式';
  $('music-volume').value=Math.round(settings.music*100);$('music-value').value=Math.round(settings.music*100)+'%';
  $('sfx-volume').value=Math.round(settings.sfx*100);$('sfx-value').value=Math.round(settings.sfx*100)+'%';
  $('hit-sound').checked=!!settings.hitSound;$('failure-sound').value=settings.failureSound;$('offset').value=settings.offsetMs;$('offset-value').value=(settings.offsetMs>0?'+':'')+settings.offsetMs+' 毫秒';
@@ -108,7 +110,7 @@ function prepareAssets(){
  preparation=Promise.resolve().then(async()=>{
   data=window.COURT_DATA;
   if(!data||!window.CourtScene||!window.FnfUI||!window.FnfJudge)throw new Error('游戏文件不完整');
-  FnfUI.configure({chart:data.chart,config:data.config});
+  FnfUI.configure({chart:data.chart,config:{...data.config,downscroll:settings.downscroll}});
   CourtSounds.warmup(['intro3','intro2','intro1','introGo']);
   await Promise.all([FnfUI.load('assets/ui/'),CourtScene.load('assets/'),metadataReady()]);
   engine=new FnfJudge(data.chart,data.config,{autoplay:false,practice:false,ghostTapping:false});
@@ -239,6 +241,7 @@ $('pause').onclick=()=>phase==='paused'?resume():pause();$('resume').onclick=res
 $('pause-menu').onclick=$('result-menu').onclick=$('gameover-menu').onclick=menu;$('gameover-retry').onclick=retryFailure;$('fullscreen').onclick=toggleFullscreen;
 $('settings-open').onclick=openSettings;$('settings-close').onclick=closeSettings;$('settings-reset').onclick=()=>{settings={...DEFAULTS,keys:[...DEFAULTS.keys]};bindingLane=null;applySettings();settingsForm();};
 $('settings-done').onclick=closeSettings;
+$('downscroll').onchange=()=>{settings.downscroll=$('downscroll').checked;applySettings();settingsForm();};
 for(const [id,name]of [['music-volume','music'],['sfx-volume','sfx']])$(id).oninput=()=>{settings[name]=Number($(id).value)/100;applySettings();settingsForm();};
 $('hit-sound').onchange=()=>{settings.hitSound=$('hit-sound').checked;applySettings();};$('offset').oninput=()=>{settings.offsetMs=Number($('offset').value);applySettings();settingsForm();};
 $('failure-sound').onchange=()=>{settings.failureSound=['mode','off','on'].includes($('failure-sound').value)?$('failure-sound').value:'mode';applySettings();};
