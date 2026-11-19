@@ -20,7 +20,7 @@
   const finite = (n, fallback) => Number.isFinite(n) ? n : fallback;
   const defaults = {
     width: 1920, height: 1080, spriteScale: .75, scrollSpeed: 900,
-    noteClipBottom: 800, lateNoteSeconds: .24, downscroll: false,
+    downscroll: false,
     barX: 390, barY: 958, barW: 1140, barH: 26,
     iconSize: 150, iconY: 935,
     colors: ['#69c9ef', '#b091df'], stroke: '#090c13',
@@ -236,8 +236,8 @@
     ctx.save();
     ctx.scale(width / 1920, height / 1080);
     ctx.imageSmoothingEnabled = true;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(0, c.downscroll ? stageHeight - c.noteClipBottom : 0, 1920, c.noteClipBottom); ctx.clip();
+    // Draw notes over the HUD so their entrance stays visible from the stage edge.
+    const hud = drawHud(ctx, t, state);
     for (let side = 0; side < 2; side++) for (let lane = 0; lane < 4; lane++) {
       const pos = lanePosition(side, lane);
       sprite(ctx, idle[lane], pos.x, pos.y);
@@ -252,7 +252,7 @@
       if (!(n.hold > 0) || !lanes[n.side] || !lanes[n.side][n.lane]) continue;
       const pos = upscrollPosition(n.side, n.lane), headY = pos.y + (n.hit - t) * speed;
       const tailY = pos.y + (n.hit + n.hold - t) * speed;
-      if (tailY < -50 || headY > c.noteClipBottom + 50) continue;
+      if (tailY < 0 || headY > stageHeight + 150) continue;
       const ns = getNoteState(state, n);
       // A completed tail never re-enters the scrolling-note branch. This
       // includes the exact endpoint, before the next rendered frame.
@@ -267,7 +267,7 @@
       if (dropped) ctx.globalAlpha = .45;
       // Body and cap share the same consumption boundary. Missed/dropped
       // trails remain dim below the receptor until their own source tail.
-      if (t >= n.hit || active) { ctx.beginPath(); ctx.rect(0, pos.y, 1920, c.noteClipBottom - pos.y); ctx.clip(); }
+      if (t >= n.hit || active) { ctx.beginPath(); ctx.rect(0, pos.y, 1920, stageHeight - pos.y); ctx.clip(); }
       if (bottom > top) ctx.drawImage(body, 0, 0, body.width, body.height - 1, pos.x - body.width * scale / 2, top, body.width * scale, bottom - top);
       ctx.drawImage(cap, pos.x - cap.width * scale / 2, capTop, cap.width * scale, cap.height * scale);
       ctx.restore(); sustainDrawn++;
@@ -277,14 +277,18 @@
     for (const n of events) {
       if (!lanes[n.side] || !lanes[n.side][n.lane]) continue;
       const dt = n.hit - t;
-      if (dt < -c.lateNoteSeconds) continue;
-      const ns = getNoteState(state, n);
-      if (ns.judgement === 'miss' || isSuccess(ns) || (autoSides[n.side] && dt < -.001)) continue;
       const pos = upscrollPosition(n.side, n.lane);
-      // Keep a late, still-playable head on its receptor until the judge resolves it.
-      const y = pos.y + Math.max(0, dt) * speed;
-      if (y < -150 || y > c.noteClipBottom + 150) continue;
+      const y = pos.y + dt * speed;
+      const head = images[heads[n.lane]];
+      if (!head) continue;
+      const halfHeight = head.height * scale / 2;
+      if (y + halfHeight <= 0 || y - halfHeight >= stageHeight) continue;
+      const ns = getNoteState(state, n);
+      if (isSuccess(ns) || (autoSides[n.side] && dt < -.001)) continue;
+      ctx.save();
+      if (ns.judgement === 'miss') ctx.globalAlpha = .50;
       sprite(ctx, heads[n.lane], pos.x, screenY(y));
+      ctx.restore();
       notesDrawn++;
     }
 
@@ -317,8 +321,6 @@
       ctx.drawImage(im, pos.x - anchor[0] * c.splashScale, pos.y - anchor[1] * c.splashScale, im.width * c.splashScale, im.height * c.splashScale);
       ctx.restore(); splashesDrawn++;
     }
-    ctx.restore();
-    const hud = drawHud(ctx, t, state);
     ctx.restore();
     return { notesDrawn, sustainDrawn, splashesDrawn, holdEndDrawn, activeHoldGlows, ...hud };
   }
