@@ -11,6 +11,7 @@
   <link rel="icon" type="image/png" href="assets/ui/blue0000.png">
   <link rel="preload" as="image" href="assets/menu/purple-arrows.svg">
   <link rel="stylesheet" href="style.css?v=release9">
+  <link rel="stylesheet" href="style-release11.css">
 </head>
 <body data-phase="menu" data-edition="purple-duet">
 <div class="viewport" id="viewport">
@@ -69,8 +70,12 @@
             <div id="panel-control" role="tabpanel" aria-labelledby="tab-control" hidden>
               <label class="setting-line"><span>音符方向</span><output id="scroll-direction" for="downscroll">上升式</output><input class="setting-switch" id="downscroll" type="checkbox" role="switch" aria-label="下落式音符" aria-describedby="scroll-note"></label>
               <p id="scroll-note" class="setting-note">下落式将判定线放在下方，对战条移到上方。</p>
+              <label class="setting-line"><span>滚动速度</span><input id="scroll-speed" type="range" min="50" max="200" step="5" value="100" aria-describedby="speed-note"><output id="scroll-speed-value" for="scroll-speed">1.00×</output></label>
+              <p id="speed-note" class="setting-note">仅改变音符的移动速度，音乐和判定时刻不变。</p>
               <label class="setting-line"><span>音画偏移</span><input id="offset" type="range" min="-200" max="200" step="5" value="0"><output id="offset-value">0 毫秒</output></label>
               <p class="setting-note">正值让判定稍晚，负值让判定稍早。</p>
+              <div class="setting-line calibration-line"><span>自动校准</span><button id="calibration-open" class="line-button" aria-describedby="calibration-note">开始跟拍 <span aria-hidden="true">↗</span></button></div>
+              <p id="calibration-note" class="setting-note">听节拍并跟拍，测试后可选择应用建议偏移。</p>
               <div class="setting-line bindings"><span>键盘映射</span><div id="key-bindings"><button data-bind="0" aria-label="更改左键">A</button><button data-bind="1" aria-label="更改下键">S</button><button data-bind="2" aria-label="更改上键">W</button><button data-bind="3" aria-label="更改右键">D</button></div></div>
               <p id="key-status" class="setting-note" role="status"></p>
             </div>
@@ -84,6 +89,17 @@
           </div>
         </div>
       </section>
+      <section class="overlay calibration-screen" id="calibration-overlay" aria-labelledby="calibration-title" hidden>
+        <div class="paper-sheet calibration-sheet">
+          <header class="calibration-head"><p class="sheet-mark">声音与操作</p><button id="calibration-back" class="text-button">返回设置</button></header>
+          <h2 id="calibration-title">音画校准</h2>
+          <p class="calibration-instruction">先听四拍预备，之后根据声音跟拍十二次。使用空格键或点按下方，不需要麦克风。</p>
+          <div class="calibration-progress"><progress id="calibration-progress" value="0" max="12" aria-label="已记录的节拍"></progress><output id="calibration-count">0 / 12 拍</output></div>
+          <button id="calibration-tap" class="calibration-pad" disabled hidden>跟拍 <span>空格 / 触屏</span></button>
+          <p id="calibration-status" class="calibration-status" role="status" aria-live="polite">准备好后开始，按听到的节拍跟拍。</p>
+          <div class="calibration-actions"><button id="calibration-start" class="ink-button">开始测试 <span aria-hidden="true">▶</span></button><button id="calibration-apply" class="line-button" hidden>应用偏移 <span aria-hidden="true">✓</span></button></div>
+        </div>
+      </section>
       <section class="overlay curtain" id="pause-overlay" aria-labelledby="pause-title" hidden>
         <div class="pause-sheet paper-sheet"><h2 id="pause-title">已暂停</h2><p id="pause-hint" class="note"></p>
           <button id="resume" class="ink-button">继续演奏 <span aria-hidden="true">▶</span></button>
@@ -92,7 +108,7 @@
       </section>
       <section class="overlay curtain" id="result-overlay" aria-labelledby="result-title" hidden>
         <div class="result-sheet paper-sheet">
-          <div class="result-home"><p class="sheet-mark" id="result-kicker">演奏成绩</p><h2 id="result-title">演奏完成</h2><span id="new-record" class="record-mark"></span></div>
+          <div class="result-home"><p class="sheet-mark" id="result-kicker">演奏成绩</p><h2 id="result-title" class="result-rank" lang="en">GREAT</h2><div class="result-flags"><span id="result-grade-caption" class="grade-caption">出色</span><span id="new-record" class="record-mark"></span></div></div>
           <div class="score-block"><strong id="result-score">0</strong><span>分数</span></div>
           <div class="statistics"><div><span>准确率</span><b id="result-accuracy">0%</b></div><div><span>最高连击</span><b id="result-combo">0</b></div><div><span>失误</span><b id="result-misses">0</b></div></div>
           <div class="sheet-actions"><button id="again" class="ink-button">再来一次 <span aria-hidden="true">↺</span></button><button id="result-menu" class="text-button">返回选曲</button></div>
@@ -113,5 +129,5 @@
   </aside>
 </div>
 <audio id="music" preload="none" data-src="assets/music.m4a" data-bytes="1228383" data-sha256="da0d202bf518e567ca6141c57bef4ad2d336b6830a3eccdd426cd0622606d8bd" playsinline></audio>
-<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds.js?v=release9"></script><script src="performance.js?v=audio6"></script><script src="game.js?v=silent10"></script>
+<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds-release11.js"></script><script src="performance.js?v=audio6"></script><script src="timing-release11.js"></script><script src="game-release11.js"></script>
 </body></html>
