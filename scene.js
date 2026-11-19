@@ -18,7 +18,7 @@ function configure(chart={},options={}){
   }
   cameraTrace=[];let zoom=1,panX=0;const step=.05,alpha=1-Math.exp(-step/.6);
   for(let k=0;k<=Math.ceil(duration/step)+1;k++){
-    const t=k*step,bar=cameraBars.find(b=>t>=b.start&&t<b.end)||cameraBars.at(-1);
+    const t=k*step,bar=cameraBars.find(b=>t>=b.start&&t<b.end)||cameraBars[cameraBars.length-1];
     const active=t>=cameraConfig.first,targetZoom=active?bar.zoom:1,targetPan=active?bar.panX:0;
     zoom+=(targetZoom-zoom)*alpha;panX+=(targetPan-panX)*alpha;
     cameraTrace.push({zoom,panX,focus:active?bar.focus:'quiet'});

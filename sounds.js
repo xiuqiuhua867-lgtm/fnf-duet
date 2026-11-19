@@ -5,6 +5,7 @@
   const active = new Set(), history = [];
   let files = {}, base = '', master = .45, context = null, unavailable = false, music = null;
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
   function audioContext() {
     if (context && context.state !== 'closed') return context;
@@ -361,7 +362,7 @@
   }
 
   function nativeElement(name) {
-    if (!Object.hasOwn(files, name)) return null;
+    if (!hasOwn(files, name)) return null;
     if (!elements.has(name)) {
       const audio = new Audio();
       audio.preload = 'none';
@@ -375,7 +376,7 @@
     if (clips.has(name)) return Promise.resolve(clips.get(name));
     if (loading.has(name)) return loading.get(name);
     const ctx = audioContext();
-    if (!ctx || !Object.hasOwn(files, name)) return Promise.resolve(null);
+    if (!ctx || !hasOwn(files, name)) return Promise.resolve(null);
     const task = fetchBytes(base + files[name]).then(bytes => decode(ctx, bytes))
       .then(buffer => { clips.set(name, buffer); return buffer; })
       .catch(() => null).finally(() => loading.delete(name));
@@ -471,7 +472,7 @@
   }
 
   function play(name, options = {}) {
-    if (!Object.hasOwn(files, name)) return null;
+    if (!hasOwn(files, name)) return null;
     if (options.channel) stop(options.channel);
     const voice = {
       name, relative:options.volume ?? 1, channel:options.channel || '',

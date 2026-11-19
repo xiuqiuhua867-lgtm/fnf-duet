@@ -6,22 +6,36 @@ const testMode=new URLSearchParams(location.search).get('test')==='1'&&
 const performanceDisplay=CourtPerformance.create(canvas,$('viewport'),$('performance-panel'));
 const visualClock=new CourtPerformance.VisualClock();
 const settingTabs=['sound','control','display'];
+const hasOwn=(object,key)=>Object.prototype.hasOwnProperty.call(object,key);
 const ARROWS={ArrowLeft:0,ArrowDown:1,ArrowUp:2,ArrowRight:3},physical=new Set();
 const DEFAULTS={music:.85,sfx:.45,hitSound:false,failureSound:'mode',offsetMs:0,downscroll:false,quality:'auto',performanceMonitor:false,keys:['KeyA','KeyS','KeyW','KeyD']};
 const STORE='rhythm-court26';let saved={};try{saved=JSON.parse(localStorage.getItem(STORE)||'{}');}catch{}
 if(!saved||typeof saved!=='object')saved={};
 let settings={...DEFAULTS},records={};
-for(const key of Object.keys(DEFAULTS))if(saved.settings&&Object.hasOwn(saved.settings,key))settings[key]=saved.settings[key];
+for(const key of Object.keys(DEFAULTS))if(saved.settings&&hasOwn(saved.settings,key))settings[key]=saved.settings[key];
+const playerNotes=COURT_DATA.chart.events.filter(note=>note.side===1);
+const sustainStep=COURT_DATA.config.sustainStep||.1171875;
+const highestPossibleScore=playerNotes.reduce((total,note)=>total+350+Math.ceil(note.hold/sustainStep)*10,0);
 for(const mode of ['practice','formal']){
  const record=saved.records?.[mode];
- if(record&&['score','accuracy','combo','misses'].every(key=>Number.isFinite(record[key])))records[mode]={score:record.score,accuracy:record.accuracy,combo:record.combo,misses:record.misses};
+ if(record&&Number.isSafeInteger(record.score)&&record.score>=-10000000&&record.score<=highestPossibleScore&&
+    Number.isFinite(record.accuracy)&&record.accuracy>=0&&record.accuracy<=100&&
+    Number.isSafeInteger(record.combo)&&record.combo>=0&&record.combo<=playerNotes.length&&
+    Number.isSafeInteger(record.misses)&&record.misses>=0&&record.misses<=1000000){
+  records[mode]={score:record.score,accuracy:record.accuracy,combo:record.combo,misses:record.misses};
+ }
 }
 settings.downscroll=settings.downscroll===true;
 settings.performanceMonitor=settings.performanceMonitor===true;
+settings.hitSound=settings.hitSound===true;
 settings.quality=CourtPerformance.qualities.includes(settings.quality)?settings.quality:'auto';
 settings.keys=Array.isArray(settings.keys)&&settings.keys.length===4&&new Set(settings.keys).size===4&&settings.keys.every(key=>typeof key==='string'&&/^(Key[A-Z]|Digit[0-9]|Numpad[0-9])$/.test(key)&&!['KeyR','KeyF'].includes(key))?settings.keys:[...DEFAULTS.keys];
-for(const name of ['music','sfx'])settings[name]=Math.max(0,Math.min(1,Number(settings[name])||0));
-settings.offsetMs=Math.max(-200,Math.min(200,Number(settings.offsetMs)||0));
+function settingNumber(value,fallback,min,max){
+ const number=typeof value==='number'||typeof value==='string'?Number(value):NaN;
+ return Number.isFinite(number)?Math.max(min,Math.min(max,number)):fallback;
+}
+for(const name of ['music','sfx'])settings[name]=settingNumber(settings[name],DEFAULTS[name],0,1);
+settings.offsetMs=settingNumber(settings.offsetMs,DEFAULTS.offsetMs,-200,200);
 settings.failureSound=['mode','off','on'].includes(settings.failureSound)?settings.failureSound:'mode';
 let data,engine,ready=false,phase='menu',autoplay=false,practice=false,lastState=null,highestCombo=0;
 let preparation=null,preparationError='',pendingMode=null;
@@ -30,7 +44,7 @@ let sessionToken=0,feedbackCursor=0,countStart=0,countFrozen=null,countStep=-1,p
 let failedStart=0,retryStart=0,failLoopStarted=false,failurePaused=false,bindingLane=null,menuPage='home',audioWaiting=false;
 let lastMusicTime=0,lastMusicProgress=0,lastPaintWall=0,playbackBeganAt=0;
 const now=()=>performance.now()/1000,beat=()=>60/(data?.chart.bpm||128),preRoll=()=>3*beat();
-const laneOf=code=>Object.hasOwn(ARROWS,code)?ARROWS[code]:settings.keys.indexOf(code);
+const laneOf=code=>hasOwn(ARROWS,code)?ARROWS[code]:settings.keys.indexOf(code);
 const touchLanes=new Map();
 const downInLane=lane=>[...physical].some(code=>laneOf(code)===lane)||[...touchLanes.values()].includes(lane);
 const songClock=()=>debugTime===null?audio.currentTime-settings.offsetMs/1000:debugTime;
@@ -61,7 +75,7 @@ function showMenuPage(view,withSound=true){
  }
  showPreparation();$(view==='song'?'practice-start':'freeplay').focus({preventScroll:true});
 }
-function updateBest(){const r=records.formal,el=$('best-score');el.hidden=!r;el.textContent=r?`正式最佳 ${r.score.toLocaleString('zh-CN')} · 准确率 ${r.accuracy.toFixed(2)}%`:'';}
+function updateBest(){const r=records.formal,el=$('best-score');el.hidden=!r;el.textContent=r?`本地正式最佳 ${r.score.toLocaleString('zh-CN')} · 准确率 ${r.accuracy.toFixed(2)}%`:'';}
 function failureAudioEnabled(){return settings.failureSound==='on'||(settings.failureSound==='mode'&&!practice);}
 function applySettings(){audio.volume=settings.music;CourtSounds.setVolume(settings.sfx);FnfUI.configure({config:{downscroll:settings.downscroll}});performanceDisplay.configure(settings.quality,settings.performanceMonitor);if(!failureAudioEnabled())for(const channel of ['failure-miss','death','gameover','retry'])CourtSounds.stop(channel);persist();}
 function settingsForm(){
@@ -231,7 +245,7 @@ function showSettingsTab(name){
 for(const name of settingTabs){
  const tab=$('tab-'+name);
  tab.onclick=()=>showSettingsTab(name);
- tab.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();const i=settingTabs.indexOf(name),delta=e.key==='ArrowLeft'?-1:1;const next=e.key==='Home'?settingTabs[0]:e.key==='End'?settingTabs.at(-1):settingTabs[(i+delta+settingTabs.length)%settingTabs.length];showSettingsTab(next);$('tab-'+next).focus();};
+ tab.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();const i=settingTabs.indexOf(name),delta=e.key==='ArrowLeft'?-1:1;const next=e.key==='Home'?settingTabs[0]:e.key==='End'?settingTabs[settingTabs.length-1]:settingTabs[(i+delta+settingTabs.length)%settingTabs.length];showSettingsTab(next);$('tab-'+next).focus();};
 }
 function closeSettings(){if(phase!=='settings')return;bindingLane=null;applySettings();phase='menu';overlay('menu');updateControls();menuSound('cancelMenu');$('settings-open').focus({preventScroll:true});}
 function toggleFullscreen(){window.PlayScreen.toggle();}
@@ -263,22 +277,27 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{const lane=laneOf(e.code);if(lane<0)return;if(['playing','paused'].includes(phase))e.preventDefault();physical.delete(e.code);if(phase==='paused')updatePauseHint();else release(lane);});
 function lostFocus(){if(['playing','countdown','starting'].includes(phase))pause('已切换窗口。');if(phase==='failed'){failurePaused=true;CourtSounds.pauseAll();}clearPhysical();if(phase==='paused')updatePauseHint();}
 window.addEventListener('blur',lostFocus);document.addEventListener('visibilitychange',()=>{if(document.hidden)lostFocus();else if(failurePaused&&phase==='failed'){failurePaused=false;CourtSounds.resumeAll();}});window.addEventListener('focus',()=>{if(failurePaused&&phase==='failed'){failurePaused=false;CourtSounds.resumeAll();}});
+function liftTouch(e){
+ const lane=touchLanes.get(e.pointerId);
+ if(lane===undefined)return;
+ touchLanes.delete(e.pointerId);
+ if(![...touchLanes.values()].includes(lane))document.querySelector('[data-lane="'+lane+'"]')?.classList.remove('down');
+ if(phase==='paused')updatePauseHint();else release(lane);
+}
 document.querySelectorAll('[data-lane]').forEach(button=>{
  const lane=Number(button.dataset.lane);
  button.addEventListener('pointerdown',e=>{
-  if(button.disabled||autoplay||!['playing','paused'].includes(phase)||touchLanes.has(e.pointerId))return;
+  if(button.disabled||autoplay||!['playing','paused'].includes(phase)||touchLanes.has(e.pointerId)||(e.pointerType==='mouse'&&e.button!==0))return;
   e.preventDefault();const wasDown=downInLane(lane);touchLanes.set(e.pointerId,lane);
-  button.setPointerCapture(e.pointerId);button.classList.add('down');
+  try{button.setPointerCapture?.(e.pointerId);}catch{}button.classList.add('down');
   if(phase==='paused')updatePauseHint();else if(!wasDown)input(lane);
  });
- function lift(e){
-  if(touchLanes.get(e.pointerId)!==lane)return;
-  touchLanes.delete(e.pointerId);
-  if(![...touchLanes.values()].includes(lane))button.classList.remove('down');
-  if(phase==='paused')updatePauseHint();else release(lane);
- }
- for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,lift);
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,liftTouch);
 });
+// Some mobile browsers decline pointer capture. A release outside the pad
+// must still lift the original lane rather than leave a held key behind.
+window.addEventListener('pointerup',liftTouch);
+window.addEventListener('pointercancel',liftTouch);
 function startPerformance(asPractice){
  if(phase!=='menu'||menuPage!=='song')return;
  void CourtSounds.unlock();

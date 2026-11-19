@@ -1,12 +1,20 @@
 (function () {
   'use strict';
   const viewport = document.getElementById('viewport');
+  const stage = document.querySelector('.stage');
   const fullButton = document.getElementById('fullscreen');
+  const legacyUnits = typeof CSS === 'undefined' || !CSS.supports('width','1cqw');
   const coarse = matchMedia('(pointer: coarse)');
   const isTouch = () => coarse.matches || (navigator.maxTouchPoints > 0 && innerWidth < 1100);
   const fullscreen = () => document.fullscreenElement || document.webkitFullscreenElement;
   const requestFull = viewport.requestFullscreen || viewport.webkitRequestFullscreen;
   let pending = false;
+
+  function fitLegacyStage() {
+    if (!legacyUnits || !stage.clientWidth) return;
+    stage.style.setProperty('--legacy-stage-unit', (stage.clientWidth / 100) + 'px');
+    stage.classList.toggle('legacy-compact', stage.clientWidth <= 700);
+  }
 
   function layout() {
     const visual = window.visualViewport;
@@ -20,6 +28,7 @@
     viewport.dataset.touch = String(isTouch());
     fullButton.hidden = !requestFull;
     fullButton.setAttribute('aria-label', fullscreen() ? '退出全屏' : '全屏');
+    fitLegacyStage();
   }
 
   async function enter(fromTouch) {
@@ -49,5 +58,9 @@
   coarse.addEventListener?.('change', layout);
   document.addEventListener('fullscreenchange', layout);
   document.addEventListener('webkitfullscreenchange', layout);
+  if (legacyUnits) {
+    if (typeof ResizeObserver === 'function') new ResizeObserver(fitLegacyStage).observe(stage);
+    else if (typeof MutationObserver === 'function') new MutationObserver(fitLegacyStage).observe(document.body,{attributes:true,attributeFilter:['data-phase']});
+  }
   layout();
 })();
