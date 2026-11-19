@@ -1,6 +1,9 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id),canvas=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),audio=CourtSounds.createMusic($('music'));
+// Retire the optional hit-sound control even if an older HTML page is cached.
+const obsoleteHitControl=$('hit-sound');
+if(obsoleteHitControl)(obsoleteHitControl.closest('.setting-line')||obsoleteHitControl).remove();
 const testMode=new URLSearchParams(location.search).get('test')==='1'&&
  (location.protocol==='file:'||['localhost','127.0.0.1','[::1]'].includes(location.hostname));
 const performanceDisplay=CourtPerformance.create(canvas,$('viewport'),$('performance-panel'));
@@ -8,7 +11,7 @@ const visualClock=new CourtPerformance.VisualClock();
 const settingTabs=['sound','control','display'];
 const hasOwn=(object,key)=>Object.prototype.hasOwnProperty.call(object,key);
 const ARROWS={ArrowLeft:0,ArrowDown:1,ArrowUp:2,ArrowRight:3},physical=new Set();
-const DEFAULTS={music:.85,sfx:.45,hitSound:false,failureSound:'mode',offsetMs:0,downscroll:false,quality:'auto',performanceMonitor:false,keys:['KeyA','KeyS','KeyW','KeyD']};
+const DEFAULTS={music:.85,sfx:.45,failureSound:'mode',offsetMs:0,downscroll:false,quality:'auto',performanceMonitor:false,keys:['KeyA','KeyS','KeyW','KeyD']};
 const STORE='rhythm-court26';let saved={};try{saved=JSON.parse(localStorage.getItem(STORE)||'{}');}catch{}
 if(!saved||typeof saved!=='object')saved={};
 let settings={...DEFAULTS},records={};
@@ -27,7 +30,6 @@ for(const mode of ['practice','formal']){
 }
 settings.downscroll=settings.downscroll===true;
 settings.performanceMonitor=settings.performanceMonitor===true;
-settings.hitSound=settings.hitSound===true;
 settings.quality=CourtPerformance.qualities.includes(settings.quality)?settings.quality:'auto';
 settings.keys=Array.isArray(settings.keys)&&settings.keys.length===4&&new Set(settings.keys).size===4&&settings.keys.every(key=>typeof key==='string'&&/^(Key[A-Z]|Digit[0-9]|Numpad[0-9])$/.test(key)&&!['KeyR','KeyF'].includes(key))?settings.keys:[...DEFAULTS.keys];
 function settingNumber(value,fallback,min,max){
@@ -83,7 +85,7 @@ function settingsForm(){
  $('quality').value=settings.quality;$('performance-monitor').checked=settings.performanceMonitor;
  $('music-volume').value=Math.round(settings.music*100);$('music-value').value=Math.round(settings.music*100)+'%';
  $('sfx-volume').value=Math.round(settings.sfx*100);$('sfx-value').value=Math.round(settings.sfx*100)+'%';
- $('hit-sound').checked=!!settings.hitSound;$('failure-sound').value=settings.failureSound;$('offset').value=settings.offsetMs;$('offset-value').value=(settings.offsetMs>0?'+':'')+settings.offsetMs+' 毫秒';
+ $('failure-sound').value=settings.failureSound;$('offset').value=settings.offsetMs;$('offset-value').value=(settings.offsetMs>0?'+':'')+settings.offsetMs+' 毫秒';
  document.querySelectorAll('[data-bind]').forEach(b=>{b.textContent=keyLabel(settings.keys[Number(b.dataset.bind)]);b.classList.toggle('binding',Number(b.dataset.bind)===bindingLane);});
 }
 function drawCountdown(t){
@@ -116,8 +118,7 @@ function consumeFeedback(state){
  while(first>0&&events[first-1].seq>feedbackCursor)first--;
  for(let i=first;i<events.length;i++){const e=events[i];feedbackCursor=e.seq;
   if(e.side!==1||state.time-e.at>.20||state.time<e.at||phase!=='playing')continue;
-  if(e.type==='hit'&&settings.hitSound)CourtSounds.play('hitsound',{volume:.24});
-  else if(['miss','ghost','drop'].includes(e.type)&&failureAudioEnabled())CourtSounds.play('missnote'+(1+e.seq%3),{volume:.50,channel:'failure-miss'});
+  if(['miss','ghost','drop'].includes(e.type)&&failureAudioEnabled())CourtSounds.play('missnote'+(1+e.seq%3),{volume:.50,channel:'failure-miss'});
  }
 }
 function resetMusicWatch(){
@@ -171,7 +172,7 @@ function prepareAssets(){
   data=window.COURT_DATA;
   if(!data||!window.CourtScene||!window.FnfUI||!window.FnfJudge)throw new Error('游戏文件不完整');
   FnfUI.configure({chart:data.chart,config:{...data.config,downscroll:settings.downscroll}});
-  const soundsReady=CourtSounds.warmup(['intro3','intro2','intro1','introGo','hitsound','missnote1','missnote2','missnote3']);
+  const soundsReady=CourtSounds.warmup(['intro3','intro2','intro1','introGo','missnote1','missnote2','missnote3']);
   await Promise.all([FnfUI.load('assets/ui/'),CourtScene.load('assets/'),audio.prepare(),soundsReady]);
   if(!Number.isFinite(audio.duration)||audio.duration<data.chart.duration-.25)throw new Error('乐曲文件未完整载入');
   void CourtSounds.warmup(['fnf_loss_sfx','gameOver','gameOverEnd']);
@@ -319,7 +320,7 @@ $('downscroll').onchange=()=>{settings.downscroll=$('downscroll').checked;applyS
 $('quality').onchange=()=>{settings.quality=CourtPerformance.qualities.includes($('quality').value)?$('quality').value:'auto';applySettings();};
 $('performance-monitor').onchange=()=>{settings.performanceMonitor=$('performance-monitor').checked;applySettings();};
 for(const [id,name]of [['music-volume','music'],['sfx-volume','sfx']])$(id).oninput=()=>{settings[name]=Number($(id).value)/100;applySettings();settingsForm();};
-$('hit-sound').onchange=()=>{settings.hitSound=$('hit-sound').checked;applySettings();};$('offset').oninput=()=>{settings.offsetMs=Number($('offset').value);applySettings();settingsForm();};
+$('offset').oninput=()=>{settings.offsetMs=Number($('offset').value);applySettings();settingsForm();};
 $('failure-sound').onchange=()=>{settings.failureSound=['mode','off','on'].includes($('failure-sound').value)?$('failure-sound').value:'mode';applySettings();};
 document.querySelectorAll('[data-bind]').forEach(b=>b.onclick=()=>{bindingLane=Number(b.dataset.bind);settingsForm();$('key-status').textContent='请按新的字母或数字键，Esc取消。';});
 $('retry').onclick=()=>pendingMode===null?prepareAssets():startPerformance(pendingMode);for(const b of document.querySelectorAll('.overlay button'))b.addEventListener('click',()=>{if(!['start','practice-start','gameover-retry','settings-open','settings-close','freeplay','song-back'].includes(b.id))menuSound(['pause-menu','result-menu','gameover-menu'].includes(b.id)?'cancelMenu':'confirmMenu');});

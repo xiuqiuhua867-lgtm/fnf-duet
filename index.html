@@ -63,7 +63,8 @@
               <label class="setting-line"><span>效果音量</span><input id="sfx-volume" type="range" min="0" max="100" value="45"><output id="sfx-value">45%</output></label>
               <label class="setting-line"><span>失误与失败音</span><select id="failure-sound"><option value="mode">按模式</option><option value="off">关闭</option><option value="on">开启</option></select></label>
               <p class="setting-note">默认仅在正式演奏中播放失误与失败音。</p>
-              <label class="setting-line"><span>正确命中音</span><input class="toggle" id="hit-sound" type="checkbox"></label>
+              <!-- Hidden during the transition from an older cached script. -->
+              <input id="hit-sound" type="checkbox" hidden disabled>
             </div>
             <div id="panel-control" role="tabpanel" aria-labelledby="tab-control" hidden>
               <label class="setting-line"><span>音符方向</span><output id="scroll-direction" for="downscroll">上升式</output><input class="setting-switch" id="downscroll" type="checkbox" role="switch" aria-label="下落式音符" aria-describedby="scroll-note"></label>
@@ -112,5 +113,5 @@
   </aside>
 </div>
 <audio id="music" preload="none" data-src="assets/music.m4a" data-bytes="1228383" data-sha256="da0d202bf518e567ca6141c57bef4ad2d336b6830a3eccdd426cd0622606d8bd" playsinline></audio>
-<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds.js?v=release9"></script><script src="performance.js?v=audio6"></script><script src="game.js?v=release9"></script>
+<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds.js?v=release9"></script><script src="performance.js?v=audio6"></script><script src="game.js?v=silent10"></script>
 </body></html>
