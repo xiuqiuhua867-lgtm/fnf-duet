@@ -13,6 +13,7 @@
       this.observed = null;
       this.observedAt = 0;
       this.presented = null;
+      this.leadLimit = .033;
     }
 
     sample(raw, wall, advancing) {
@@ -20,14 +21,20 @@
         this.observed = raw;
         this.observedAt = wall;
         this.presented = raw;
+        this.leadLimit = .033;
         return raw;
       }
       if (raw > this.observed) {
+        // Some native players report time once per 100ms. Learn that
+        // cadence for visual interpolation, with a strict 120ms bound.
+        const step = raw - this.observed, interval = (wall-this.observedAt)/1000;
+        this.leadLimit = step > .045 && step < .15 && interval > .03 && interval < .18
+          ? Math.min(.12, Math.max(step, interval) + .004) : .033;
         this.observed = raw;
         this.observedAt = wall;
       }
-      const ahead = Math.min(.033, Math.max(0, (wall - this.observedAt) / 1000));
-      this.presented = Math.min(raw + .033, Math.max(raw + ahead, this.presented));
+      const ahead = Math.min(this.leadLimit, Math.max(0, (wall - this.observedAt) / 1000));
+      this.presented = Math.max(this.presented, raw + ahead);
       return this.presented;
     }
   }
@@ -133,7 +140,7 @@
       return enabled || (automatic && (trial !== null || (!stopAdapting && canvas.height > heights[0])));
     }
 
-    function record(timestamp, workMs, painted, rawAudio, phase, live) {
+    function record(timestamp, workMs, painted, rawAudio, phase, live, audioMode) {
       if (!active || exporting || document.hidden) {
         clearSample();
         return;
@@ -171,6 +178,7 @@
           'GPU 占用 —',
           '刷新调度 ' + Math.round(reading.cadence) + '/秒',
           '音频时间 ' + (reading.audioHz === null ? '—' : Math.round(reading.audioHz) + '/秒'),
+          '音频 ' + (audioMode === 'web-audio' ? 'Web Audio' : audioMode === 'native' ? '兼容模式' : '载入中'),
           reading.width + '×' + reading.height
         ].join('\n');
       }
