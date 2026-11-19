@@ -44,6 +44,83 @@
     finally { controller?.abort(); }
   }
 
+  async function validSong(bytes, size, sha256) {
+    if (bytes.byteLength !== size) return false;
+    if (sha256 && root.crypto?.subtle) {
+      const digest = await root.crypto.subtle.digest('SHA-256', bytes);
+      const actual = Array.from(new Uint8Array(digest), value=>value.toString(16).padStart(2,'0')).join('');
+      return actual === sha256.toLowerCase();
+    }
+    return true;
+  }
+
+  // The public host may take much longer than 20 seconds on a slow network.
+  // Time out an idle transfer, resume its received bytes, and cache the
+  // verified complete song before decoding it.
+  async function fetchSong(url, size, sha256, progress) {
+    if (!(size > 0)) return fetchBytes(url);
+    let cache = null;
+    if (typeof caches !== 'undefined') {
+      try {
+        cache = await deadline(caches.open('fnf-duet-song-'+(sha256||String(size))), 1200, '缓存不可用');
+        const saved = await cache.match(url);
+        if (saved) {
+          const bytes = await saved.arrayBuffer();
+          if (await validSong(bytes,size,sha256)) { progress(size,size); return bytes; }
+          await cache.delete(url);
+        }
+      } catch { cache = null; }
+    }
+    const output = new Uint8Array(size);
+    const endAt = performance.now()+120000;
+    let received = 0, attempts = 0;
+    progress(0,size);
+    while (received < size) {
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      try {
+        const budget = Math.min(15000,endAt-performance.now());
+        if (budget <= 0) throw new Error('乐曲下载超时');
+        const response = await deadline(fetch(url,{
+          credentials:'same-origin',
+          ...(controller?{signal:controller.signal}:{}),
+          ...(received?{headers:{Range:'bytes='+received+'-'}}:{})
+        }),budget,'乐曲连接超时');
+        if (response.status === 206) {
+          const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('Content-Range')||'');
+          if (!range || Number(range[1])!==received || Number(range[3])!==size) throw new Error('音频续传范围不符');
+        } else if (response.status === 200) {
+          received=0;
+        } else throw new Error('乐曲下载失败');
+        function append(chunk) {
+          if (received+chunk.byteLength>size) throw new Error('乐曲文件大小不符');
+          output.set(chunk,received);received+=chunk.byteLength;progress(received,size);
+        }
+        if (response.body?.getReader) {
+          const reader = response.body.getReader();
+          for (;;) {
+            const wait = Math.min(12000,endAt-performance.now());
+            if (wait <= 0) throw new Error('乐曲下载超时');
+            const {done,value} = await deadline(reader.read(),wait,'乐曲下载中断');
+            if (done) break;
+            append(value);
+          }
+        } else {
+          const wait = endAt-performance.now();
+          if (wait<=0) throw new Error('乐曲下载超时');
+          append(new Uint8Array(await deadline(response.arrayBuffer(),wait,'乐曲下载超时')));
+        }
+        if (received < size) throw new Error('乐曲下载不完整');
+      } catch (error) {
+        attempts++;
+        if (!received||attempts>=4||performance.now()>=endAt) throw error;
+      } finally { controller?.abort(); }
+    }
+    const bytes=output.buffer;
+    if (!await validSong(bytes,size,sha256)) throw new Error('乐曲文件校验不符');
+    if (cache) void cache.put(url,new Response(bytes,{headers:{'Content-Type':'audio/mp4'}})).catch(()=>{});
+    return bytes;
+  }
+
   function decode(ctx, bytes) {
     return deadline(new Promise((resolve, reject) => {
       try {
@@ -79,6 +156,7 @@
       this.preparation = null;
       this.buffer = null;
       this.fullFile = false;
+      this.downloadProgress = null;
       this.objectURL = null;
       this.nativeURL = '';
       this.nativeDuration = NaN;
@@ -166,11 +244,15 @@
       if (this.preparation) return this.preparation;
       this.preparation = (async () => {
         const url = this.element.dataset.src;
+        this.downloadProgress=null;
         const ctx = audioContext();
         // Download every byte before the round. Where available, a native
         // fallback also uses that complete local file.
         if (typeof fetch === 'function' && location.protocol !== 'file:') {
-          const bytes = await fetchBytes(url);
+          const bytes = await fetchSong(url,Number(this.element.dataset.bytes),this.element.dataset.sha256,(received,total)=>{
+            const percent=Math.floor(received*100/total);
+            if(percent!==this.downloadProgress){this.downloadProgress=percent;this.emit('progress');}
+          });
           this.fullFile = true;
           if (ctx) {
             try {

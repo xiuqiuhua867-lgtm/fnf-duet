@@ -143,7 +143,9 @@ function musicAdvancing(raw=songClock()){
 }
 function showPreparation(){
  const visible=phase==='menu'&&menuPage==='song';
- const status=$('load-status'),message=preparationError||(preparation?'正在准备舞台和乐曲…':'');
+ const progress=audio.downloadProgress;
+ const waiting=progress===null?'正在准备舞台和乐曲…':progress<100?`正在载入乐曲 ${progress}%…`:'音乐已载入，正在准备演奏…';
+ const status=$('load-status'),message=preparationError||(preparation?waiting:'');
  status.textContent=message;status.hidden=!visible||!message;status.classList.toggle('error',!!preparationError);
  $('retry').hidden=!visible||!preparationError;
 }
@@ -302,6 +304,7 @@ $('hit-sound').onchange=()=>{settings.hitSound=$('hit-sound').checked;applySetti
 $('failure-sound').onchange=()=>{settings.failureSound=['mode','off','on'].includes($('failure-sound').value)?$('failure-sound').value:'mode';applySettings();};
 document.querySelectorAll('[data-bind]').forEach(b=>b.onclick=()=>{bindingLane=Number(b.dataset.bind);settingsForm();$('key-status').textContent='请按新的字母或数字键，Esc取消。';});
 $('retry').onclick=()=>pendingMode===null?prepareAssets():startPerformance(pendingMode);for(const b of document.querySelectorAll('.overlay button'))b.addEventListener('click',()=>{if(!['start','practice-start','gameover-retry','settings-open','settings-close','freeplay','song-back'].includes(b.id))menuSound(['pause-menu','result-menu','gameover-menu'].includes(b.id)?'cancelMenu':'confirmMenu');});
+audio.addEventListener('progress',showPreparation);
 audio.addEventListener('ended',endSong);audio.addEventListener('error',()=>{if(phase==='playing'&&debugTime===null)pause('乐曲读取中断，计分已暂停。点击继续演奏恢复。');});
 for(const event of ['waiting','seeking','pause','ended'])audio.addEventListener(event,()=>{if(event==='waiting')audioWaiting=true;visualClock.reset();});
 audio.addEventListener('playing',()=>{audioWaiting=false;visualClock.reset();});
