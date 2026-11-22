@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" href="assets/ui/blue0000.png">
   <link rel="preload" as="image" href="assets/menu/purple-arrows.svg">
   <link rel="stylesheet" href="style.css?v=release9">
-  <link rel="stylesheet" href="style-release11.css">
+  <link rel="stylesheet" href="style-load16.css">
 </head>
 <body data-phase="menu" data-edition="purple-duet">
 <div class="viewport" id="viewport">
@@ -45,7 +45,14 @@
             </article>
           </div>
         </section>
-        <div class="load-strip"><p id="load-status" role="status" hidden></p><button id="retry" class="text-button" hidden>重试</button></div>
+        <div class="load-strip" id="load-strip" hidden>
+          <div class="load-meter">
+            <div class="load-meter-head"><span>资源准备</span><strong id="load-percent">0%</strong></div>
+            <progress id="asset-progress" max="4" value="0" aria-label="资源准备进度"></progress>
+            <p id="load-status" role="status" aria-live="polite">已完成 0 / 4 项</p>
+          </div>
+          <button id="retry" class="text-button" hidden>重试</button>
+        </div>
       </div>
       <section class="overlay settings-screen paper-page" id="settings-overlay" aria-labelledby="settings-title" hidden>
         <header class="screen-head"><button id="settings-close" class="back" aria-label="返回首页"><span aria-hidden="true">←</span> 首页</button></header>
@@ -129,5 +136,5 @@
   </aside>
 </div>
 <audio id="music" preload="none" data-src="assets/music.m4a" data-bytes="1228383" data-sha256="da0d202bf518e567ca6141c57bef4ad2d336b6830a3eccdd426cd0622606d8bd" playsinline></audio>
-<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds-release11.js"></script><script src="performance.js?v=audio6"></script><script src="timing-release11.js"></script><script src="game-release11.js"></script>
+<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds-load16.js"></script><script src="performance.js?v=audio6"></script><script src="timing-release11.js"></script><script src="game-load16.js"></script>
 </body></html>
