@@ -6,12 +6,13 @@
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#b99cf6">
-  <meta name="description" content="情绪与星界的四键对唱。打开浏览器，选择练习或正式演奏。">
+  <meta name="description" content="四键同人节奏游戏。选择关卡，开始练习或正式演奏。">
   <title>Friday Night Funkin’ · 同人</title>
   <link rel="icon" type="image/png" href="assets/ui/blue0000.png">
   <link rel="preload" as="image" href="assets/menu/purple-arrows.svg">
   <link rel="stylesheet" href="style.css?v=release9">
   <link rel="stylesheet" href="style-load16.css">
+  <link rel="stylesheet" href="tracks02.css?v=4">
 </head>
 <body data-phase="menu" data-edition="purple-duet">
 <div class="viewport" id="viewport">
@@ -26,39 +27,50 @@
             <h1 lang="en" aria-label="Friday Night Funkin’"><span>FRIDAY</span><span>NIGHT</span><span class="word-last">FUNKIN’</span></h1>
             <nav class="home-actions" aria-label="主菜单">
               <button id="freeplay" class="ink-button">自由演奏 <span aria-hidden="true">↗</span></button>
-              <button id="settings-open" class="quiet-action">声音与操作 <span aria-hidden="true">↗</span></button>
+              <button id="settings-open" class="quiet-action">设置 <span aria-hidden="true">↗</span></button>
             </nav>
           </div>
         </section>
         <section class="song-screen paper-page" id="song-screen" aria-label="选曲" hidden>
           <header class="screen-head"><button id="song-back" class="back" aria-label="返回首页"><span aria-hidden="true">←</span> 首页</button><span class="crumb">自由演奏</span></header>
-          <div class="release-layout">
-            <div class="court-print"><img data-src="assets/packed/court.webp" alt="《要举止得体》的法庭舞台" draggable="false"></div>
-            <article class="release-details">
-              <h2>要举止得体</h2>
-              <p class="artist">情绪 <i>×</i> 星界</p>
-              <div class="modes">
-                <button id="practice-start" class="ink-button" disabled>练习演奏 <span aria-hidden="true">↗</span></button>
-                <button id="start" class="line-button" disabled>正式演奏 <span aria-hidden="true">↗</span></button>
+          <img class="track-motif" src="assets/menu/purple-arrows.svg" alt="" draggable="false">
+          <div class="track-browser">
+            <section class="track-index" aria-labelledby="track-heading">
+              <div class="track-heading"><h2 id="track-heading">选择关卡</h2><span class="track-count"><b id="track-count">2</b> 首</span></div>
+              <div class="track-list" id="track-list" role="group" aria-label="歌曲列表"></div>
+              <div class="track-nav"><span>点击歌曲切换关卡</span><span id="track-scroll-hint" hidden>滑动查看更多 <b aria-hidden="true">↓</b></span></div>
+            </section>
+            <article class="track-preview release-details" id="track-preview" aria-label="当前关卡">
+              <div class="track-poster">
+                <span class="poster-label">关卡 <b id="current-number">01</b></span>
+                <div class="court-print"><img data-src="assets/packed/court.webp" alt="当前关卡场景" draggable="false"></div>
+                <h2 class="poster-title" id="current-title">要举止得体</h2>
+                <p id="best-score" class="best" hidden></p>
               </div>
-              <p id="best-score" class="best" hidden></p>
+              <div class="track-action-slot">
+                <button id="download-start" class="ink-button download-start">下载 <span class="download-meta"><small id="download-size"></small><b aria-hidden="true">↓</b></span></button>
+                <div class="load-strip" id="load-strip" hidden>
+                  <div class="load-meter">
+                    <div class="load-meter-head"><span>歌曲下载</span><strong id="load-percent">0%</strong></div>
+                    <progress id="asset-progress" max="100" value="0" aria-label="歌曲实际下载进度"></progress>
+                    <p id="load-status" role="status" aria-live="polite">0.00 MB</p>
+                  </div>
+                  <button id="retry" class="text-button" hidden>重试</button>
+                </div>
+                <div class="modes" id="play-modes" hidden>
+                  <button id="practice-start" class="ink-button" disabled>练习演奏 <span aria-hidden="true">↗</span></button>
+                  <button id="start" class="line-button" disabled>正式演奏 <span aria-hidden="true">↗</span></button>
+                </div>
+              </div>
             </article>
           </div>
         </section>
-        <div class="load-strip" id="load-strip" hidden>
-          <div class="load-meter">
-            <div class="load-meter-head"><span>资源准备</span><strong id="load-percent">0%</strong></div>
-            <progress id="asset-progress" max="4" value="0" aria-label="资源准备进度"></progress>
-            <p id="load-status" role="status" aria-live="polite">已完成 0 / 4 项</p>
-          </div>
-          <button id="retry" class="text-button" hidden>重试</button>
-        </div>
       </div>
       <section class="overlay settings-screen paper-page" id="settings-overlay" aria-labelledby="settings-title" hidden>
         <header class="screen-head"><button id="settings-close" class="back" aria-label="返回首页"><span aria-hidden="true">←</span> 首页</button></header>
         <div class="settings-layout">
           <div class="settings-index">
-            <h2 id="settings-title">声音与操作</h2>
+            <h2 id="settings-title">设置</h2>
             <div class="settings-tabs" role="tablist" aria-label="设置类别">
               <button id="tab-sound" role="tab" aria-selected="true" aria-controls="panel-sound">声音</button>
               <button id="tab-control" role="tab" aria-selected="false" aria-controls="panel-control" tabindex="-1">操作</button>
@@ -98,7 +110,7 @@
       </section>
       <section class="overlay calibration-screen" id="calibration-overlay" aria-labelledby="calibration-title" hidden>
         <div class="paper-sheet calibration-sheet">
-          <header class="calibration-head"><p class="sheet-mark">声音与操作</p><button id="calibration-back" class="text-button">返回设置</button></header>
+          <header class="calibration-head"><p class="sheet-mark">设置</p><button id="calibration-back" class="text-button">返回设置</button></header>
           <h2 id="calibration-title">音画校准</h2>
           <p class="calibration-instruction">先听四拍预备，之后根据声音跟拍十二次。使用空格键或点按下方，不需要麦克风。</p>
           <div class="calibration-progress"><progress id="calibration-progress" value="0" max="12" aria-label="已记录的节拍"></progress><output id="calibration-count">0 / 12 拍</output></div>
@@ -136,5 +148,5 @@
   </aside>
 </div>
 <audio id="music" preload="none" data-src="assets/music.m4a" data-bytes="1228383" data-sha256="da0d202bf518e567ca6141c57bef4ad2d336b6830a3eccdd426cd0622606d8bd" playsinline></audio>
-<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds-load16.js"></script><script src="performance.js?v=audio6"></script><script src="timing-release11.js"></script><script src="game-load16.js"></script>
+<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=release9"></script><script src="sounds-load16.js"></script><script src="performance.js?v=audio6"></script><script src="timing-release11.js"></script><script src="assets/song02/data.js?v=web03"></script><script src="track-select02.js?v=2"></script><script src="song02.js?v=web03"></script><script src="game-tracks02.js?v=4"></script>
 </body></html>
