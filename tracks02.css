@@ -58,3 +58,6 @@
 body[data-local-track="02"][data-scroll="up"] #viewport[data-touch="true"] .transport{top:1%;bottom:auto;left:50%;right:auto;transform:translateX(-50%)}
 body[data-local-track="02"][data-scroll="down"] #viewport[data-touch="true"] .transport{top:auto;bottom:calc(var(--dock) + 4px);left:50%;right:auto;transform:translateX(-50%)}
 @media(max-width:850px){.track-browser{top:17%;bottom:11%;gap:5%;left:5.8%;right:6.4%}.track-heading{margin-bottom:2cqw}.track-list{gap:1.3cqw;padding:1cqw .9cqw 1cqw .45cqw}.track-card{border-width:1.5px;min-height:8.5cqw;gap:1cqw;box-shadow:2px 2px var(--ink)}.track-poster{border-width:2px}.track-preview .modes button{min-height:29px}.track-nav{font-size:9px}.poster-label{border-width:1.5px}}
+
+body[data-local-track="03"] .touch-keys [data-lane="1"]{--lane:#9ec2ff}
+body[data-local-track="03"] .touch-keys [data-lane="2"]{--lane:#ffc08d}

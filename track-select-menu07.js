@@ -15,7 +15,7 @@
  const scripts=new Map();
  function loadScript(file){
   if(!scripts.has(file))scripts.set(file,new Promise((resolve,reject)=>{
-   const script=document.createElement('script');script.src=file+'?v=webperf04';
+   const script=document.createElement('script');script.src=file+(file==='song03.js'?'?v=readable03-03':'?v=webperf04');
    script.onload=resolve;script.onerror=()=>{script.remove();scripts.delete(file);reject(Error('曲目文件载入失败：'+file));};
    document.head.appendChild(script);
   }));
