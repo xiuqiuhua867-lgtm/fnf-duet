@@ -2,22 +2,26 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self' blob:; connect-src 'self' https://careful-guppy-d2gqm66r44b4167fa-1539698355.ap-shanghai.app.tcloudbase.com/fnf-rank-three-v1; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#b99cf6">
-  <meta name="description" content="四键同人节奏游戏。选择关卡，开始练习或正式演奏。">
+  <meta name="description" content="四键同人节奏游戏。选择关卡和难度，跟随音乐演奏。">
   <title>Friday Night Funkin’ · 同人</title>
   <link rel="icon" type="image/png" href="assets/ui/blue0000.png">
   <link rel="preload" as="image" href="assets/menu/purple-arrows.svg">
   <link rel="preload" as="image" href="assets/packed/court.webp">
   <link rel="preload" as="image" href="assets/song02/cover.png">
-  <link rel="preload" as="fetch" crossorigin="anonymous" href="assets/extra/sounds/confirmMenu.m4a">
-  <link rel="preload" as="fetch" crossorigin="anonymous" href="assets/extra/sounds/cancelMenu.m4a">
-  <link rel="preload" as="fetch" crossorigin="anonymous" href="assets/extra/sounds/scrollMenu.m4a">
-  <link rel="stylesheet" href="style.css?v=release9">
-  <link rel="stylesheet" href="style-load16.css">
-  <link rel="stylesheet" href="tracks02.css?v=4">
+  <link rel="preload" as="image" href="assets/song03/cover.png">
+  <link rel="preload" as="fetch" crossorigin="anonymous" fetchpriority="high" href="assets/extra/sounds/confirmMenu.m4a">
+  <link rel="preload" as="fetch" crossorigin="anonymous" fetchpriority="high" href="assets/extra/sounds/cancelMenu.m4a">
+  <link rel="preload" as="fetch" crossorigin="anonymous" fetchpriority="high" href="assets/extra/sounds/scrollMenu.m4a">
+  <link rel="stylesheet" href="style.css?v=three26">
+  <link rel="stylesheet" href="style-load16.css?v=three26">
+  <link rel="stylesheet" href="tracks02.css?v=three26">
+  <link rel="stylesheet" href="ranking.css?v=three26">
+  <link rel="stylesheet" href="difficulty-local01.css?v=three26">
+  <link rel="stylesheet" href="release-note.css?v=three26m2">
 </head>
 <body data-phase="menu" data-edition="purple-duet">
 <div class="viewport" id="viewport">
@@ -27,6 +31,7 @@
       <div class="overlay menu-overlay" id="menu-overlay" data-view="home">
         <section class="home-screen" id="home-screen" aria-label="主菜单">
           <img class="hero-arrows" src="assets/menu/purple-arrows.svg" alt="" draggable="false" fetchpriority="high">
+          <button id="release-open" type="button" class="line-button" aria-haspopup="dialog" aria-controls="release-note">更新公告</button>
           <div class="content-margin">
             <div class="fan-mark">同人</div>
             <h1 lang="en" aria-label="Friday Night Funkin’"><span>FRIDAY</span><span>NIGHT</span><span class="word-last">FUNKIN’</span></h1>
@@ -37,11 +42,11 @@
           </div>
         </section>
         <section class="song-screen paper-page" id="song-screen" aria-label="选曲" hidden>
-          <header class="screen-head"><button id="song-back" class="back" aria-label="返回首页"><span aria-hidden="true">←</span> 首页</button><span class="crumb">自由演奏</span></header>
+          <header class="screen-head"><button id="song-back" class="back" aria-label="返回首页"><span aria-hidden="true">←</span> 首页</button><span class="crumb">自由演奏</span><button id="rank-open" class="rank-entry" type="button">全球排行 <span aria-hidden="true">↗</span></button></header>
           <img class="track-motif" src="assets/menu/purple-arrows.svg" alt="" draggable="false">
           <div class="track-browser">
             <section class="track-index" aria-labelledby="track-heading">
-              <div class="track-heading"><h2 id="track-heading">选择关卡</h2><span class="track-count"><b id="track-count">2</b> 首</span></div>
+              <div class="track-heading"><h2 id="track-heading">选择关卡</h2><span class="track-count"><b id="track-count">3</b> 首</span></div>
               <div class="track-list" id="track-list" role="group" aria-label="歌曲列表"></div>
               <div class="track-nav"><span>点击歌曲切换关卡</span><span id="track-scroll-hint" hidden>滑动查看更多 <b aria-hidden="true">↓</b></span></div>
             </section>
@@ -56,15 +61,15 @@
                 <button id="download-start" class="ink-button download-start">下载 <span class="download-meta"><small id="download-size"></small><b aria-hidden="true">↓</b></span></button>
                 <div class="load-strip" id="load-strip" hidden>
                   <div class="load-meter">
-                    <div class="load-meter-head"><span>歌曲下载</span><strong id="load-percent">0%</strong></div>
-                    <progress id="asset-progress" max="100" value="0" aria-label="歌曲实际下载进度"></progress>
+                    <div class="load-meter-head"><span id="load-phase">歌曲下载</span><strong id="load-percent">0%</strong></div>
+                    <progress id="asset-progress" max="100" value="0" aria-labelledby="load-phase load-percent"></progress>
                     <p id="load-status" role="status" aria-live="polite">0.00 MB</p>
                   </div>
                   <button id="retry" class="text-button" hidden>重试</button>
                 </div>
-                <div class="modes" id="play-modes" hidden>
-                  <button id="practice-start" class="ink-button" disabled>练习演奏 <span aria-hidden="true">↗</span></button>
-                  <button id="start" class="line-button" disabled>正式演奏 <span aria-hidden="true">↗</span></button>
+                <div class="difficulty-panel" id="play-modes" hidden>
+                  <div class="difficulty-options" aria-label="难度选择"><button type="button" data-difficulty="easy" aria-pressed="false">简单</button><button type="button" data-difficulty="standard" aria-pressed="true">标准</button></div>
+                  <button id="start" class="ink-button difficulty-start" disabled>开始演奏 <span aria-hidden="true">↗</span></button>
                 </div>
               </div>
             </article>
@@ -135,6 +140,7 @@
           <div class="result-home"><p class="sheet-mark" id="result-kicker">演奏成绩</p><h2 id="result-title" class="result-rank" lang="en">GREAT</h2><div class="result-flags"><span id="result-grade-caption" class="grade-caption">出色</span><span id="new-record" class="record-mark"></span></div></div>
           <div class="score-block"><strong id="result-score">0</strong><span>分数</span></div>
           <div class="statistics"><div><span>准确率</span><b id="result-accuracy">0%</b></div><div><span>最高连击</span><b id="result-combo">0</b></div><div><span>失误</span><b id="result-misses">0</b></div></div>
+          <button id="rank-submit" class="ink-button rank-submit" hidden>联网上传成绩 <span aria-hidden="true">↗</span></button><p id="rank-result-status" class="rank-result-status" role="status" hidden></p>
           <div class="sheet-actions"><button id="again" class="ink-button">再来一次 <span aria-hidden="true">↺</span></button><button id="result-menu" class="text-button">返回选曲</button></div>
         </div>
       </section>
@@ -146,12 +152,55 @@
     <div class="touch-keys" role="group" aria-label="演奏方向键">
       <button data-lane="0" aria-label="左" disabled><span>←</span></button><button data-lane="1" aria-label="下" disabled><span>↓</span></button><button data-lane="2" aria-label="上" disabled><span>↑</span></button><button data-lane="3" aria-label="右" disabled><span>→</span></button>
     </div>
+    <dialog id="release-note" class="release-note" data-release="three26" aria-labelledby="release-title">
+      <header><h2 id="release-title">更新公告</h2><form method="dialog"><button type="submit" aria-label="关闭公告" autofocus>×</button></form></header>
+      <ul>
+        <li>全新曲目<span lang="ja">ねぇねぇねぇ。</span>已上线</li>
+        <li>新增简单难度并替换原有练习模式</li>
+        <li>谱面设计更加成熟</li>
+        <li>新增联网成绩，标准难度通关后即可登录上传</li>
+      </ul>
+    </dialog>
   </main>
   <aside id="performance-panel" aria-label="性能监测" hidden>
     <strong><span id="perf-fps">—</span><small> FPS</small></strong>
     <div id="perf-details">正在测量…</div>
   </aside>
 </div>
-<audio id="music" preload="none" data-src="assets/music.m4a" data-bytes="1228383" data-sha256="da0d202bf518e567ca6141c57bef4ad2d336b6830a3eccdd426cd0622606d8bd" playsinline></audio>
-<script src="screen.js?v=release9"></script><script src="assets/packed/art.js?v=purple2"></script><script src="art-loader.js?v=purple2"></script><script src="assets/extra/manifest.js?v=purple2"></script><script src="ui.js?v=hud8"></script><script src="judge.js?v=perf5"></script><script src="scene.js?v=release9"></script><script src="data.js?v=gridstd01"></script><script src="sounds-menu07.js"></script><script src="menu-preload.js?v=1"></script><script src="performance.js?v=audio6"></script><script src="timing-release11.js"></script><script src="assets/song02/data.js?v=gridstd09lane1"></script><script src="track-select-menu07.js"></script><script src="song02-menu07.js"></script><script src="game-tracks-menu07.js"></script>
+<dialog id="rank-dialog" class="rank-dialog" aria-labelledby="rank-dialog-title">
+  <header><span class="rank-kicker">ONLINE / STANDARD</span><button id="rank-close" type="button" aria-label="关闭">×</button></header>
+  <h2 id="rank-dialog-title">全球排行</h2>
+  <p id="rank-account-label" class="rank-muted"></p>
+  <div id="rank-board-view">
+    <nav class="rank-tabs" aria-label="排行榜类型"><button type="button" data-rank-song="total" aria-pressed="true">总排行</button><button type="button" data-rank-song="01" aria-pressed="false">关卡 01</button><button type="button" data-rank-song="02" aria-pressed="false">关卡 02</button><button type="button" data-rank-song="03" aria-pressed="false">关卡 03</button></nav>
+    <p id="rank-next" class="rank-muted"></p>
+    <div class="rank-table-wrap"><table class="rank-table"><thead><tr><th>排名</th><th>昵称</th><th>分数</th><th>准确率</th><th>连击</th><th>失误</th></tr></thead><tbody id="rank-rows"></tbody></table></div>
+    <p id="rank-my-place" class="rank-muted"></p>
+    <details id="rank-history" hidden>
+      <summary>我的云成绩与申诉</summary>
+      <label for="rank-score-select">最近提交的成绩</label>
+      <select id="rank-score-select"></select>
+      <label for="rank-appeal-reason">申诉理由</label>
+      <input id="rank-appeal-reason" maxlength="500" placeholder="请描述需要复核的问题">
+      <button type="button" id="rank-appeal-submit">提交复核</button>
+    </details>
+    <div class="rank-actions"><button type="button" id="rank-login-button">登录 / 注册</button><button type="button" id="rank-rename" hidden>更改昵称</button><button type="button" id="rank-logout" hidden>退出账号</button><button type="button" id="rank-refresh">刷新排行</button></div>
+  </div>
+  <form id="rank-auth-view" hidden>
+    <div class="rank-tabs"><button type="button" id="rank-login-tab" aria-pressed="true">登录</button><button type="button" id="rank-register-tab" aria-pressed="false">注册</button></div>
+    <label for="rank-name">玩家昵称</label><input id="rank-name" name="nickname" required maxlength="40" autocomplete="username" placeholder="唯一昵称">
+    <p class="rank-muted" id="rank-name-hint" hidden>请谨慎取名，改名冷却期为30天。昵称不得重复，不得包含违规内容或冒充官方。</p>
+    <label for="rank-secret">专属暗号</label><input id="rank-secret" name="secret" type="text" inputmode="text" required maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="支持中文、英文或短句">
+    <p class="rank-muted" id="rank-secret-hint" hidden>可以填写兴趣爱好、自创词语或一段有特殊意义的短句。请选择容易记忆且不易被他人猜到的内容，不得与昵称相同。</p>
+    <label for="rank-password">登录密码</label><input id="rank-password" name="password" type="password" required maxlength="128" autocomplete="current-password" placeholder="登录密码">
+    <div id="rank-confirm-wrap" hidden><label for="rank-confirm">确认密码</label><input id="rank-confirm" type="password" maxlength="128" autocomplete="new-password" placeholder="至少8位密码"></div>
+    <p class="rank-muted">登录后才上传成绩，简单成绩保存在本地。排名公开显示昵称和成绩。</p>
+    <button id="rank-auth-submit" class="rank-primary" type="submit">登录</button><button id="rank-back" type="button">返回</button>
+  </form>
+  <p id="rank-message" role="status" aria-live="polite"></p>
+</dialog>
+<audio id="music" preload="none" data-src="assets/music.m4a" data-bytes="6250371" data-sha256="34fb998bef922bf53092fcbf251123481302616da02cec9ee0e8a80539b3dd58" playsinline></audio>
+<script src="assets/extra/manifest.js?v=three26"></script><script src="sounds-menu07.js?v=webperf02"></script><script src="menu-preload.js?v=webperf02"></script>
+<script src="screen.js?v=three26"></script><script src="assets/packed/art.js?v=three26"></script><script src="art-loader.js?v=three26"></script><script src="ui.js?v=webperf01"></script><script src="judge-difficulty01.js?v=webperf03"></script><script src="scene.js?v=three26"></script><script src="data.js?v=three26"></script><script src="performance.js?v=webperf01"></script><script src="timing-release11.js?v=three26"></script><script src="track-manifest.js?v=webperf01"></script><script src="track-select-menu07.js?v=webperf04"></script><script src="difficulty.js?v=webperf01"></script><script src="rank-versions.js?v=webperf03"></script><script src="game-tracks-menu07.js?v=webqa05"></script>
+<script src="rank-cloud.js?v=three26"></script><script src="ranking.js?v=three26m2"></script>
 </body></html>

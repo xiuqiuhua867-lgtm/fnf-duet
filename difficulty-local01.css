@@ -1,0 +1,16 @@
+/* Local-only difficulty selector: same purple/paper graphic language. */
+.difficulty-panel{display:grid;gap:clamp(8px,calc(var(--cw)*.85),16px);max-width:100%;margin-top:calc(var(--cw)*1.4)}
+.difficulty-top{display:flex;align-items:center;gap:clamp(6px,calc(var(--cw)*.7),13px)}
+.difficulty-caption{font-weight:800;font-size:clamp(11px,calc(var(--cw)*.85),16px);color:var(--ink);white-space:nowrap}
+.difficulty-options{display:flex;flex-wrap:wrap;gap:clamp(4px,calc(var(--cw)*.45),9px);flex:1}
+.difficulty-options button{flex:1 1 70px;min-width:0;white-space:nowrap;min-height:32px;border:1.5px solid var(--ink);color:var(--ink);background:var(--paper);font-weight:850;font-size:clamp(12px,calc(var(--cw)*1.05),19px);padding:.43em .55em;box-shadow:2px 2px 0 var(--ink)}
+.difficulty-options button[aria-pressed="true"]{background:#d9f943;color:#17151d;box-shadow:3px 3px 0 var(--ink);transform:rotate(-1deg)}
+.difficulty-options button:focus-visible{outline:3px solid #9572e3;outline-offset:2px}
+.difficulty-start{width:100%;text-align:left;min-height:42px;font-size:clamp(14px,calc(var(--cw)*1.35),26px);display:flex;justify-content:space-between;align-items:center}
+.difficulty-panel+ .best{margin-top:calc(var(--cw)*1)}
+@media(max-width:850px){.difficulty-panel{gap:6px;margin-top:7px}.difficulty-options button{min-height:26px;font-size:11px;padding:4px 7px;flex-basis:42px}.difficulty-start{min-height:31px;padding:5px 8px;font-size:13px}}
+.track-action-slot:has(#play-modes:not([hidden])){height:auto}
+#play-modes[hidden]{display:none}
+#play-modes .difficulty-options{display:flex;gap:8px}
+#play-modes button[data-difficulty]{flex:1}
+#play-modes button[aria-pressed=true]{background:var(--acid);color:var(--ink)}

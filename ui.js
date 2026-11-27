@@ -45,7 +45,7 @@
     return api;
   }
 
-  async function load(base = 'assets/ui/') {
+  async function loadCountdown(base = 'assets/ui/') {
     base = base.replace(/\/+$/, '') + '/';
     extraBase = base.replace(/ui\/$/, 'extra/');
     if (!root.FNF_EXTRA_ASSETS) {
@@ -61,6 +61,13 @@
     if (!extraManifest) throw new Error('Additional UI manifest is missing');
     maxSplashFrames = Object.values(extraManifest.splash_groups || {}).reduce((max, frames) => Math.max(max, frames.length), 0);
     await WebArt.load('hud');
+    for(const name of ['num3','ready','set','go']){
+      const file=extraManifest.images[name];extraImages[file]=WebArt.surface('extra/'+file);
+    }
+  }
+  async function load(base = 'assets/ui/') {
+    if(ready)return api;
+    await loadCountdown(base);
     for(const key of keys)images[key]=WebArt.surface('ui/'+key);
     const files=new Set(Object.values(extraManifest.images));
     for(const file of files)extraImages[file]=WebArt.surface('extra/'+file);
@@ -356,7 +363,7 @@
     return { notesDrawn, sustainDrawn, splashesDrawn, holdEndDrawn, activeHoldGlows, ...hud };
   }
 
-  const api = { load, configure, draw, lanePosition, iconState, displayHealth, warmSplashes, get ready() { return ready; }, assetKeys: keys.slice(),
+  const api = { load, loadCountdown, configure, draw, lanePosition, iconState, displayHealth, warmSplashes, get ready() { return ready; }, assetKeys: keys.slice(),
     get extraManifest() { return extraManifest; }, get extraBase() { return extraBase; },
     getExtraImage(name) { const file = extraManifest && extraManifest.images[name]; return file ? extraImages[file] : null; }
   };

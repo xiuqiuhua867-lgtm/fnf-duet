@@ -1,0 +1,45 @@
+#release-open {
+  position:absolute;right:4.5%;top:6%;z-index:1;min-height:32px;
+  padding:.42em .85em;transform:rotate(-2deg);font-size:clamp(13px,1.4cqw,22px)
+}
+.release-note {
+  position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;
+  width:min(35rem,88vw);max-width:92vw;max-height:88vh;max-height:88dvh;overflow:auto;
+  border:3px solid var(--ink);padding:0;color:var(--ink);background:var(--paper);
+  box-shadow:7px 7px 0 var(--ink)
+}
+.release-note::backdrop {
+  background:rgb(28 23 41 / 64%);
+  transition:background-color 250ms cubic-bezier(.2,0,0,1);
+}
+.release-note[data-closing]::backdrop {background:transparent;transition-duration:200ms}
+@starting-style {.release-note[open]::backdrop {background:transparent}}
+@media (prefers-reduced-motion:reduce){.release-note::backdrop{transition:none}}
+.release-note header {
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:clamp(12px,2.1vmin,22px) clamp(18px,3.6vmin,32px);
+  background:var(--violet);border-bottom:3px solid var(--ink)
+}
+.release-note h2 {font-size:clamp(23px,3.8vmin,34px);font-weight:900;line-height:1.15;margin:0}
+.release-note form {margin:0}
+.release-note button {
+  display:grid;place-items:center;background:var(--paper);border:2px solid var(--ink);
+  box-shadow:2px 2px var(--ink);width:2.4rem;height:2.4rem;font:700 25px/1 Arial,sans-serif
+}
+.release-note button:hover {background:var(--acid)}
+.release-note ul {list-style:none;padding:0 clamp(18px,3.6vmin,32px);margin:.35rem 0 .6rem}
+.release-note li {
+  position:relative;margin:0;padding:clamp(10px,1.9vmin,16px) 0 clamp(10px,1.9vmin,16px) 1.1em;
+  font-size:clamp(15px,2.3vmin,20px);line-height:1.5;font-weight:600;overflow-wrap:anywhere
+}
+.release-note li+li {border-top:1px solid rgb(24 22 29 / 22%)}
+.release-note li::before {
+  content:"";position:absolute;left:0;top:calc(clamp(10px,1.9vmin,16px) + .57em);
+  width:.40em;height:.40em;background:var(--ink);transform:rotate(-8deg)
+}
+.release-note li:first-child {font-weight:850}
+#viewport[data-rotated="true"] .release-note {
+  --note-orientation:90deg;
+  width:min(35rem,85dvh);max-width:92dvh;max-height:88dvw;
+  transform:translate(-50%,-50%) rotate(90deg)
+}

@@ -34,10 +34,10 @@
     catch { return Promise.resolve(false); }
   }
 
-  async function fetchBytes(url) {
+  async function fetchBytes(url, priority='auto') {
     const controller = typeof AbortController === 'function' ? new AbortController() : null;
     const task = (async () => {
-      const response = await fetch(url, {credentials:'same-origin', ...(controller ? {signal:controller.signal} : {})});
+      const response = await fetch(url, {credentials:'same-origin',priority, ...(controller ? {signal:controller.signal} : {})});
       if (!response.ok) throw new Error('音频资源读取失败');
       return response.arrayBuffer();
     })();
@@ -60,18 +60,6 @@
   // verified complete song before decoding it.
   async function fetchSong(url, size, sha256, progress) {
     if (!(size > 0)) return fetchBytes(url);
-    let cache = null;
-    if (typeof caches !== 'undefined') {
-      try {
-        cache = await deadline(caches.open('fnf-duet-song-'+(sha256||String(size))), 1200, '缓存不可用');
-        const saved = await cache.match(url);
-        if (saved) {
-          const bytes = await saved.arrayBuffer();
-          if (await validSong(bytes,size,sha256)) { progress(size,size); return bytes; }
-          await cache.delete(url);
-        }
-      } catch { cache = null; }
-    }
     const output = new Uint8Array(size);
     const endAt = performance.now()+120000;
     let received = 0, attempts = 0;
@@ -118,7 +106,10 @@
     }
     const bytes=output.buffer;
     if (!await validSong(bytes,size,sha256)) throw new Error('乐曲文件校验不符');
-    if (cache) void cache.put(url,new Response(bytes,{headers:{'Content-Type':'audio/mp4'}})).catch(()=>{});
+    if (typeof caches !== 'undefined'){
+      const response=new Response(bytes,{headers:{'Content-Type':'audio/mp4'}});
+      void caches.open('fnf-duet-song-'+(sha256||String(size))).then(cache=>cache.put(url,response)).catch(()=>{});
+    }
     return bytes;
   }
 
@@ -288,7 +279,21 @@
       if (Number.isFinite(el.duration)) this.nativeDuration = el.duration;
     }
 
-    prepare() {
+    readCached() {
+      if (this.cacheProbe) return this.cacheProbe;
+      const {src,bytes,sha256}=this.element.dataset,size=Number(bytes);
+      if (!size || typeof caches==='undefined') return Promise.resolve(null);
+      const probe=async()=>{
+        const saved=await caches.match(new URL(src,location.href).href,{cacheName:'fnf-duet-song-'+(sha256||String(size))});
+        if (!saved)return null;
+        const data=await saved.arrayBuffer();
+        return await validSong(data,size,sha256)?data:null;
+      };
+      this.cacheProbe=deadline(probe(),3500,'乐曲缓存读取超时').catch(()=>null).finally(()=>{this.cacheProbe=null;});
+      return this.cacheProbe;
+    }
+
+    prepare(cachedBytes) {
       if (this.prepared) return Promise.resolve();
       if (this.preparation) return this.preparation;
       this.preparation = (async () => {
@@ -298,10 +303,13 @@
         // Download every byte before the round. Where available, a native
         // fallback also uses that complete local file.
         if (typeof fetch === 'function' && location.protocol !== 'file:') {
-          const bytes = await fetchSong(url,Number(this.element.dataset.bytes),this.element.dataset.sha256,(received,total)=>{
+          const progress=(received,total)=>{
             this.downloadReceived=received;this.downloadTotal=total;const percent=Math.floor(received*100/total);
             if(percent!==this.downloadProgress){this.downloadProgress=percent;this.emit('progress');}
-          });
+          };
+          const cached=cachedBytes||await this.readCached();
+          const bytes=cached||await fetchSong(url,this.downloadTotal,this.element.dataset.sha256,progress);
+          if(cached)progress(bytes.byteLength,bytes.byteLength);
           this.fullFile = true;
           if (ctx) {
             try {
@@ -420,24 +428,31 @@
     return elements.get(name);
   }
 
-  function clip(name) {
+  function clip(name, priority='auto') {
     if (clips.has(name)) return Promise.resolve(clips.get(name));
     if (loading.has(name)) return loading.get(name);
     const ctx = audioContext();
     if (!ctx || !hasOwn(files, name)) return Promise.resolve(null);
-    const task = fetchBytes(base + files[name]).then(bytes => decode(ctx, bytes))
+    const task = fetchBytes(base + files[name],priority).then(bytes => decode(ctx, bytes))
       .then(buffer => { clips.set(name, buffer); return buffer; })
       .catch(() => null).finally(() => loading.delete(name));
     loading.set(name, task);
     return task;
   }
 
-  function warmup(names) {
-    if (audioContext() && typeof fetch === 'function' && location.protocol !== 'file:') return Promise.all(names.map(clip));
-    for (const name of names) {
-      const sound = nativeElement(name);
-      if (sound && sound.preload !== 'auto') { sound.preload = 'auto'; sound.load(); }
+  function preloadNative(name){
+    const sound=nativeElement(name);
+    if(sound&&sound.preload!=='auto'){sound.preload='auto';sound.load();}
+  }
+
+  function warmup(names, priority='auto') {
+    if (audioContext() && typeof fetch === 'function' && location.protocol !== 'file:') {
+      return Promise.all(names.map(async name=>{
+        const buffer=await clip(name,priority);
+        if(!buffer)preloadNative(name);
+      }));
     }
+    for (const name of names)preloadNative(name);
     return Promise.resolve();
   }
 
@@ -507,12 +522,11 @@
     if (ctx && !voice.element && typeof fetch === 'function' && location.protocol !== 'file:') {
       const buffer = clips.get(voice.name);
       if (buffer && ctx.state === 'running') { startClip(voice, buffer, ctx); return; }
-      Promise.all([buffer || clip(voice.name), deadline(unlock(), 1800, '音效等待超时')])
+      Promise.all([buffer || clip(voice.name), deadline(unlock(), 1800, '音效等待超时').catch(()=>false)])
         .then(([ready, unlocked]) => {
           if (!active.has(voice) || voice.paused || voice.generation !== generation) return;
           if (!unlocked || !ready) {
-            if (music?.mode === 'native' || ['confirmMenu','cancelMenu','scrollMenu'].includes(voice.name)) startNativeVoice(voice, generation);
-            else remove(voice);
+            startNativeVoice(voice, generation);
             return;
           }
           startClip(voice, ready, ctx);
@@ -575,6 +589,7 @@
     musicStatus() { return music?.status() || null; },
     unlock, warmup, play, stop, setVolume, pauseAll, resumeAll, startTimingPulse,
     get ready() { return !!Object.keys(files).length; },
+    get canPlayImmediately() { return context?.state === 'running'; },
     snapshot() {
       return {
         ready:this.ready, loaded:[...new Set([...clips.keys(), ...[...elements].filter(([,el])=>el.readyState>=1).map(([name])=>name)])],

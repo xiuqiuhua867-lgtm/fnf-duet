@@ -1,8 +1,8 @@
 (function(root){
  'use strict';
  const tracks=root.FNFTrackMenu.tracks;
- tracks['01'].scene=root.CourtScene;tracks['01'].ui=root.FnfUI;
- const M=root.SONG02_DATA, oldUI=root.FnfUI, mod=(x,n)=>((x%n)+n)%n, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+ tracks['02'].installScene=function(){
+ const M=root.SONG02_DATA, oldUI=tracks['01'].ui, mod=(x,n)=>((x%n)+n)%n, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
  const W=1920,H=1080,G=4,ROOTS=[608,1312],roles=['matsuri','ayame'],dirs=['left','down','up','right'],beat=60/M.chart.bpm;
  const time=M.scene, assets={}, pal=M.palette, A=M.frames;
  let loadPromise=null,ready=false,hud={offset:0,feet:[776,776],visible:true},setting={downscroll:false,scrollSpeed:870};
@@ -31,14 +31,14 @@
  function shadow(ctx,x,t){const c=t<time.firstCut?'#57270d':'#b85d16';floorRect(ctx,x-56,775,111,8,c);floorRect(ctx,x-48,784,96,3,c);}
  function drawKeys(ctx,t,keys,foot=776,scale=6,offset=0){for(let s=0;s<2;s++)performer(ctx,s,keys[s],ROOTS[s]+offset,foot,scale);}
  const scratch=document.createElement('canvas');scratch.width=W;scratch.height=H;const sc=scratch.getContext('2d');sc.imageSmoothingEnabled=false;
- const incoming=document.createElement('canvas');incoming.width=W;incoming.height=H;const ic=incoming.getContext('2d');ic.imageSmoothingEnabled=false;
+ // Both passes paint an opaque background; the reveal reuses scratch after compositing the outgoing frame.
  function mario(ctx,t,keys){background(ctx,'mario'+Math.floor(Math.max(0,t-M.chart.beatOrigin)/.23)%3);for(let s=0;s<2;s++)shadow(ctx,ROOTS[s],t);drawKeys(ctx,t,keys);}
  function settingCollapse(ctx,t,keys){mario(sc,t,keys);ctx.save();ctx.filter='invert(1) brightness(.38)';ctx.drawImage(scratch,0,0);ctx.restore();floorRect(ctx,0,0,W,H,'rgba(12,13,30,.25)');const idx=clamp(find(time.textCues,t,x=>x),0,3);background(ctx,'glyph'+idx);}
  function hallZero(ctx,keys){ctx.drawImage(assets.hall,0,0,480,270,0,0,W,H);drawKeys(ctx,0,keys);}
  function firstTransition(ctx,t,keys){
-   settingCollapse(ctx,Math.min(t,time.firstCut-.00001),keys);hallZero(ic,keys);
+   settingCollapse(ctx,Math.min(t,time.firstCut-.00001),keys);hallZero(sc,keys);
    let u=clamp((t-time.reveal[0])/(time.reveal[1]-time.reveal[0]),0,1);u=u*u*(3-2*u);
-   for(let y=0;y<15;y++)for(let x=0;x<24;x++){let alpha=clamp((u*1.14-M.transitionRank[y][x])/.14,0,1);if(alpha<=0)continue;ctx.globalAlpha=alpha;ctx.drawImage(incoming,x*80,y*72,80,72,x*80,y*72,80,72);}ctx.globalAlpha=1;
+   for(let y=0;y<15;y++)for(let x=0;x<24;x++){let alpha=clamp((u*1.14-M.transitionRank[y][x])/.14,0,1);if(alpha<=0)continue;ctx.globalAlpha=alpha;ctx.drawImage(scratch,x*80,y*72,80,72,x*80,y*72,80,72);}ctx.globalAlpha=1;
  }
  function tetrisState(t){
    const plans=M.tetris.plans,j=find(plans,t,x=>x.t);if(j<0)return {board:plans[0].before,fall:null,clears:0,offset:0,rows:[]};
@@ -136,8 +136,8 @@
    stepped(ctx,bx,by,barW,barH,12,'#181520');stepped(ctx,bx+4,by+4,barW-8,barH-12,8,'#fff8e9');stepped(ctx,bx+8,by+8,barW-16,barH-20,8,'#181520');floorRect(ctx,bx+16,by+16,seam-bx-16,24,'#edaa43');floorRect(ctx,seam,by+16,bx+barW-16-seam,24,'#d94968');floorRect(ctx,bx+16,by+16,seam-bx-16,4,'#f9cb7a');floorRect(ctx,seam,by+16,bx+barW-16-seam,4,'#f27e9a');floorRect(ctx,seam,by+16,4,24,'#181520');
    const iy=setting.downscroll?64:922-4*Math.exp(-mod((t-M.chart.beatOrigin)/beat,1)*11);
    for(let side=0;side<2;side++){centered(ctx,'icon_'+side+'_'+h.iconStates[side],seam+(side?62:-62),iy,3);const sx=setting.downscroll?(side?1715:205):(side?1218:702),combo=s.combo?.[side]||0,score=s.scores?.[side]||0,acc=s.accuracy?.[side]??100;
-     const scoreText=(score<0?'-':'')+String(Math.abs(score)).padStart(6,'0');if(side===1||s.auto||s.practice){pixelText(ctx,'SCORE '+scoreText,sx,setting.downscroll?34:1017,setting.downscroll?2:3);pixelText(ctx,'COMBO '+String(combo).padStart(3,'0')+' ACC '+acc.toFixed(2)+'%',sx,setting.downscroll?68:1048,setting.downscroll?2:3);}
-     const pop=s.pop?.[side];if((side===1||s.auto===true)&&pop&&pop.age>=0&&pop.age<.34&&['sick','good','bad','shit'].includes(pop.kind)){ctx.save();ctx.globalAlpha=clamp((.34-pop.age)/.10,0,1);const yy=Math.min(850,hud.feet[side]+26)-pop.age*22;centered(ctx,'judge_'+(pop.kind==='shit'?'bad':pop.kind),ROOTS[side],yy);pixelText(ctx,String(combo).padStart(3,'0'),ROOTS[side],yy+41,4);ctx.restore();}
+     const scoreText=(score<0?'-':'')+String(Math.abs(score)).padStart(6,'0');pixelText(ctx,'SCORE '+scoreText,sx,setting.downscroll?34:1017,setting.downscroll?2:3);pixelText(ctx,'COMBO '+String(combo).padStart(3,'0')+' ACC '+acc.toFixed(2)+'%',sx,setting.downscroll?68:1048,setting.downscroll?2:3);
+     const pop=s.pop?.[side];if(pop&&pop.age>=0&&pop.age<.34&&['sick','good','bad','shit'].includes(pop.kind)){ctx.save();ctx.globalAlpha=clamp((.34-pop.age)/.10,0,1);const yy=Math.min(850,hud.feet[side]+26)-pop.age*22;centered(ctx,'judge_'+(pop.kind==='shit'?'bad':pop.kind),ROOTS[side],yy);pixelText(ctx,String(combo).padStart(3,'0'),ROOTS[side],yy+41,4);ctx.restore();}
    }return h;
  }
  function drawUI(ctx,t,notes,s={},width=ctx.canvas.width,height=ctx.canvas.height){if(!ready)return {};t=Math.max(0,t);const speed=Number.isFinite(setting.scrollSpeed)?setting.scrollSpeed:870,down=setting.downscroll,sign=down?-1:1;
@@ -156,7 +156,7 @@
    for(let side=0;side<2;side++)for(let l=0;l<4;l++){let st=s.laneStates?.[side]?.[l]||{},p=lane(side,l),age=t-(st.confirmAt??-1000);if(age>=0&&age<.115)centered(ctx,'confirm_'+l,p.x,p.y);else if(st.held||st.pressed)centered(ctx,'press_'+l,p.x,p.y);if(age>=0&&age<.135)centered(ctx,'burst_'+l+'_'+Math.min(3,Math.floor(age/.034)),p.x,p.y);}
    ctx.restore();return {notesDrawn:noteCount,sustainDrawn:holdCount,...h};
  }
- const ui={load:async(base)=>{await Promise.all([loadAssets(),oldUI.load(base)]);return ui;},configure:o=>{if(o?.config)setting={...setting,...o.config};return ui;},draw:drawUI,lanePosition:lane,iconState:icon,displayHealth:health,warmSplashes:()=>Promise.resolve(),getExtraImage:n=>oldUI.getExtraImage(n),get ready(){return ready;}};
+ const ui={load:async(base)=>{await Promise.all([loadAssets(),oldUI.loadCountdown(base)]);return ui;},configure:o=>{if(o?.config)setting={...setting,...o.config};return ui;},draw:drawUI,lanePosition:lane,iconState:icon,displayHealth:health,warmSplashes:()=>Promise.resolve(),getExtraImage:n=>oldUI.getExtraImage(n),get ready(){return ready;}};
  tracks['02'].ui=ui;
- if(root.LOCAL_TRACK==='02'){root.CourtScene=scene;root.FnfUI=ui;}
+ };
 })(window);
